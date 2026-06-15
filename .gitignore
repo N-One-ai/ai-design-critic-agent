@@ -3,6 +3,8 @@ node_modules
 .env.*
 !.env.example
 .agentbase-state.json
+.agentbase/
 .greennode.json
+ghcr-creds.json
 .DS_Store
 .claude/
