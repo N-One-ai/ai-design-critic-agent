@@ -218,11 +218,13 @@ async function callLlm(messages, parseOptions) {
   return result;
 }
 
-export async function analyzeDesign({ imageContent, logoReferenceContent, trademarkReferenceContents, brandGuideline, designName }) {
+export async function analyzeDesign({ imageContent, logoReferenceContent, officialLogoContents, trademarkReferenceContents, deprecatedLogoContents, brandGuideline, designName }) {
   const messages = buildMessages({
     imageContent,
     logoReferenceContent,
+    officialLogoContents,
     trademarkReferenceContents,
+    deprecatedLogoContents,
     brandGuideline,
     designName,
     language: config.reportLanguage,

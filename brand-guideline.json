@@ -55,14 +55,14 @@
     "Innovative"
   ],
   "logo": {
-    "primaryLogo": "assets/logo-primary.png",
-    "alternateLogos": [
-      "assets/logo-white.png",
-      "assets/logo-black.png"
-    ],
+    "primaryLogo": "assets/logo-current.png",
+    "alternateLogos": [],
     "referenceImages": [
-      "assets/logo-primary.png",
-      "assets/logo-secondary.png"
+      "assets/logo-current.png"
+    ],
+    "deprecatedAssets": [
+      "assets/logo-old-v1.png",
+      "assets/logo-old-v2.png"
     ],
     "rules": {
       "mustAppear": true,
@@ -81,9 +81,7 @@
     "required": true,
     "description": "Large decorative Z shape. Often appears as a semi-transparent background watermark behind content.",
     "variants": [
-      "assets/trademark-z-01.png",
-      "assets/trademark-z-02.png",
-      "assets/trademark-z-03.png"
+      "assets/trademark-z-current.png"
     ],
     "allowedColors": [
       "#0033C9",

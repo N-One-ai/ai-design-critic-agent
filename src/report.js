@@ -10,8 +10,10 @@ const CATEGORY_LABELS = {
 };
 
 const LOGO_CHECK_LABELS = {
-  logoPresent: "Có hiển thị logo",
-  correctLogo: "Đúng logo thương hiệu",
+  logoPresent: "Phát hiện logo",
+  correctBrand: "Đúng thương hiệu",
+  correctLogo: "Logo ZaloPay chính thức",
+  approvedVersion: "Phiên bản được chấp thuận",
   notDistorted: "Không bị biến dạng",
   correctColors: "Không đổi màu trái phép",
   correctPosition: "Đúng vị trí",
@@ -25,6 +27,96 @@ const TRADEMARK_CHECK_LABELS = {
   prominenceMatch: "Đủ nổi bật",
 };
 
+const THUMBNAIL_STYLE = "height:36px;width:auto;background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:2px 4px;vertical-align:middle;display:inline-block;";
+
+function renderAssetThumbnail(file, assetMap) {
+  if (!file) return "";
+  const dataUrl = assetMap?.[file];
+  if (!dataUrl) return "";
+  return `<img src="${dataUrl}" alt="" style="${THUMBNAIL_STYLE}" />`;
+}
+
+function renderLogoDetection(category, assetMap) {
+  const items = [];
+
+  if (typeof category.checks?.logoPresent === "boolean") {
+    if (category.checks.logoPresent) {
+      items.push(`<li class="status-item">${ICONS.checklistSuccess()}Logo được phát hiện</li>`);
+    } else {
+      items.push(`<li class="status-item">${ICONS.checklistFailure()}Không phát hiện logo</li>`);
+    }
+  }
+
+  if (category.detectedBrand != null) {
+    const isZaloPay = category.detectedBrand === "ZaloPay";
+    const icon = isZaloPay ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+    items.push(`<li class="metric-item">${icon}Thương hiệu nhận diện: <strong>${category.detectedBrand}</strong></li>`);
+  }
+
+  if (typeof category.checks?.correctBrand === "boolean") {
+    const icon = category.checks.correctBrand ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+    const label = category.checks.correctBrand ? "Đúng thương hiệu (ZaloPay)" : "Sai thương hiệu";
+    items.push(`<li class="status-item">${icon}${label}</li>`);
+  }
+
+  if (category.logoVersion != null) {
+    const isCurrent = category.logoVersion === "Current Official Logo";
+    const icon = isCurrent ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+    const VERSION_LABELS = {
+      "Current Official Logo": "Logo chính thức hiện hành",
+      "Deprecated": "Logo deprecated — vi phạm Brand Guideline",
+      "Old Logo Version": "Logo phiên bản cũ — vi phạm Brand Guideline",
+      "Modified Logo": "Logo đã bị chỉnh sửa — vi phạm Brand Guideline",
+      "Unknown Logo": "Không xác định được phiên bản logo",
+    };
+    const label = VERSION_LABELS[category.logoVersion] || category.logoVersion;
+    items.push(`<li class="metric-item">${icon}Phiên bản logo: <strong>${label}</strong></li>`);
+  }
+
+  if (category.reason) {
+    items.push(`<li class="metric-item" style="font-style:italic">${ICONS.checklistFailure()}${category.reason}</li>`);
+  }
+
+  const typo = category.typographyMatch;
+  if (typo) {
+    const typoIcon = typo.overall ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+    items.push(`<li class="metric-item">${typoIcon}Typography wordmark: <strong>${typo.overall ? "Khớp chính thức" : "Không khớp"}</strong></li>`);
+    if (typo.characters) {
+      const charItems = Object.entries(typo.characters)
+        .map(([char, match]) => {
+          const icon = match ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+          return `<li class="check-item" style="margin-left:1.25em">${icon}<code>${char}</code></li>`;
+        })
+        .join("\n");
+      items.push(charItems);
+    }
+    if (!typo.overall && typo.reason) {
+      items.push(`<li class="metric-item" style="margin-left:1.25em;font-style:italic">${typo.reason}</li>`);
+    }
+  }
+
+  if (typeof category.checks?.correctLogo === "boolean") {
+    const icon = category.checks.correctLogo ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+    const label = category.checks.correctLogo ? "Logo chính thức — đã xác minh" : "Logo chính thức — FAIL";
+    const officialLogoKey = Object.keys(assetMap || {}).find(
+      (k) => !k.includes("old") && !k.includes("deprecated") && k.includes("logo")
+    );
+    const thumbnail = category.checks.correctLogo && officialLogoKey
+      ? renderAssetThumbnail(officialLogoKey, assetMap)
+      : "";
+    items.push(`<li class="check-item">${icon}${label}${thumbnail ? `<br>${thumbnail}` : ""}</li>`);
+  }
+
+  if (typeof category.checks?.approvedVersion === "boolean") {
+    const icon = category.checks.approvedVersion ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+    const label = category.checks.approvedVersion ? "Phiên bản được chấp thuận" : "Phiên bản được chấp thuận — FAIL";
+    items.push(`<li class="check-item">${icon}${label}</li>`);
+  }
+
+  if (items.length === 0) return "";
+  return `**Kết quả nhận diện logo:**\n\n<ul class="checklist">\n${items.join("\n")}\n</ul>\n`;
+}
+
 export function computeOverallScore(categories) {
   const scores = CATEGORY_KEYS
     .map((key) => categories?.[key]?.score)
@@ -36,7 +128,7 @@ export function computeOverallScore(categories) {
   return Math.round(average * 10) / 10;
 }
 
-function renderTrademarkDetection(category) {
+function renderTrademarkDetection(category, assetMap) {
   const items = [];
 
   if (typeof category.detected === "boolean") {
@@ -52,7 +144,11 @@ function renderTrademarkDetection(category) {
     items.push(`<li class="metric-item">${ICONS.confidenceMetric()}Độ tin cậy: ${Math.round(category.confidence * 100)}%</li>`);
   }
   if (category.matchedVariant) {
-    items.push(`<li class="metric-item">${ICONS.variantMetric()}Đúng phiên bản: <code>${category.matchedVariant}</code></li>`);
+    const thumbnail = renderAssetThumbnail(category.matchedVariant, assetMap);
+    const content = thumbnail
+      ? `Đúng phiên bản trademark<br>${thumbnail}`
+      : "Đúng phiên bản trademark";
+    items.push(`<li class="metric-item">${ICONS.variantMetric()}${content}</li>`);
   }
 
   if (items.length === 0) return "";
@@ -91,7 +187,7 @@ function renderTrademarkChecklist(category) {
   return `**Danh sách kiểm tra:**\n\n<ul class="checklist">\n${items.join("\n")}\n</ul>\n`;
 }
 
-function renderCategory(index, key, category) {
+function renderCategory(index, key, category, assetMap) {
   const label = CATEGORY_LABELS[key] || key;
 
   if (category?.score === null || category?.score === undefined) {
@@ -99,9 +195,18 @@ function renderCategory(index, key, category) {
     return `## ${index}. ${label} — Chưa đánh giá\n${conclusion}`;
   }
 
+  const LOGO_QUALITY_LABELS = {
+    notDistorted: LOGO_CHECK_LABELS.notDistorted,
+    correctColors: LOGO_CHECK_LABELS.correctColors,
+    correctPosition: LOGO_CHECK_LABELS.correctPosition,
+    sufficientProminence: LOGO_CHECK_LABELS.sufficientProminence,
+  };
   const sections = [
-    key === "logoCompliance" ? renderChecklist(category.checks, LOGO_CHECK_LABELS) : "",
-    key === "trademarkCompliance" ? renderTrademarkDetection(category) : "",
+    key === "logoCompliance" ? renderLogoDetection(category, assetMap) : "",
+    key === "logoCompliance" && category.checks?.correctLogo === true
+      ? renderChecklist(category.checks, LOGO_QUALITY_LABELS)
+      : "",
+    key === "trademarkCompliance" ? renderTrademarkDetection(category, assetMap) : "",
     key === "trademarkCompliance" ? renderTrademarkChecklist(category) : "",
     category.conclusion ? `${category.conclusion}\n` : "",
   ].filter(Boolean).join("\n");
@@ -255,7 +360,7 @@ export function renderCompareReport(comparison) {
   return lines.join("\n");
 }
 
-export function renderMarkdownReport(analysis, overallScore) {
+export function renderMarkdownReport(analysis, overallScore, assetMap = {}) {
   const lines = [];
 
   lines.push(`# Báo cáo đánh giá thiết kế AI — ${analysis.designName || "Thiết kế chưa có tên"}`);
@@ -271,7 +376,7 @@ export function renderMarkdownReport(analysis, overallScore) {
   }
 
   REPORT_SECTION_KEYS.forEach((key, idx) => {
-    lines.push(renderCategory(idx + 1, key, analysis.categories?.[key]));
+    lines.push(renderCategory(idx + 1, key, analysis.categories?.[key], assetMap));
     lines.push("");
   });
 

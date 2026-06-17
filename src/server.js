@@ -61,9 +61,43 @@ function loadDefaultTrademarkContents(brandGuideline) {
     .filter(Boolean);
 }
 
+function loadOfficialLogoContents(brandGuideline) {
+  const files = brandGuideline?.logo?.referenceImages || [];
+  return files
+    .map((file) => {
+      try {
+        const buffer = fs.readFileSync(path.resolve(file));
+        const ext = path.extname(file).slice(1) || "png";
+        return { file, content: `data:image/${ext};base64,${buffer.toString("base64")}` };
+      } catch (err) {
+        console.warn(`No official logo loaded (${file}): ${err.message}`);
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function loadDeprecatedLogoContents(brandGuideline) {
+  const assets = brandGuideline?.logo?.deprecatedAssets || [];
+  return assets
+    .map((file) => {
+      try {
+        const buffer = fs.readFileSync(path.resolve(file));
+        const ext = path.extname(file).slice(1) || "png";
+        return { file, content: `data:image/${ext};base64,${buffer.toString("base64")}` };
+      } catch (err) {
+        console.warn(`No deprecated logo loaded (${file}): ${err.message}`);
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
 const defaultBrandGuideline = loadDefaultBrandGuideline();
 const defaultLogoContent = loadDefaultLogoContent(defaultBrandGuideline);
 const defaultTrademarkContents = loadDefaultTrademarkContents(defaultBrandGuideline);
+const defaultOfficialLogoContents = loadOfficialLogoContents(defaultBrandGuideline);
+const defaultDeprecatedLogoContents = loadDeprecatedLogoContents(defaultBrandGuideline);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
@@ -109,7 +143,15 @@ app.post("/analyze", async (req, res) => {
       ? defaultTrademarkContents
       : loadDefaultTrademarkContents(brandGuideline);
 
-    const analysis = await analyzeDesign({ imageContent, logoReferenceContent, trademarkReferenceContents, brandGuideline, designName });
+    const officialLogoContents = brandGuideline === defaultBrandGuideline
+      ? defaultOfficialLogoContents
+      : loadOfficialLogoContents(brandGuideline);
+
+    const deprecatedLogoContents = brandGuideline === defaultBrandGuideline
+      ? defaultDeprecatedLogoContents
+      : loadDeprecatedLogoContents(brandGuideline);
+
+    const analysis = await analyzeDesign({ imageContent, logoReferenceContent, officialLogoContents, trademarkReferenceContents, deprecatedLogoContents, brandGuideline, designName });
 
     const categories = analysis.categories || {};
     if (categories.trademarkCompliance && typeof categories.trademarkCompliance.score !== "number") {
@@ -117,12 +159,28 @@ app.post("/analyze", async (req, res) => {
     }
 
     const overallScore = computeOverallScore(categories);
-    const report = renderMarkdownReport(analysis, overallScore);
+
+    const assetMap = {};
+    officialLogoContents?.forEach((item) => { assetMap[item.file] = item.content; });
+    trademarkReferenceContents?.forEach((item) => { assetMap[item.file] = item.content; });
+    deprecatedLogoContents?.forEach((item) => { assetMap[item.file] = item.content; });
+    if (logoReferenceContent) assetMap["assets/logo-current.png"] = logoReferenceContent;
+
+    const report = renderMarkdownReport(analysis, overallScore, assetMap);
 
     if (req.query.format === "markdown") {
       res.status(200).type("text/markdown").send(report);
       return;
     }
+
+    const toUrl = (file) => (file ? `/${file}` : null);
+    const assets = {
+      referenceLogo: toUrl(brandGuideline?.logo?.primaryLogo),
+      officialLogos: (brandGuideline?.logo?.referenceImages || []).map(toUrl),
+      deprecatedLogos: (brandGuideline?.logo?.deprecatedAssets || []).map(toUrl),
+      trademarkVariants: (brandGuideline?.trademark?.variants || []).map(toUrl),
+      matchedTrademark: toUrl(analysis.categories?.trademarkCompliance?.matchedVariant) || null,
+    };
 
     res.status(200).json({
       designName: analysis.designName,
@@ -130,6 +188,7 @@ app.post("/analyze", async (req, res) => {
       categories: analysis.categories,
       summary: analysis.summary,
       aiRedesignPrompt: analysis.aiRedesignPrompt,
+      assets,
       report,
     });
   } catch (err) {
