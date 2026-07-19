@@ -2,7 +2,7 @@ export const config = {
   port: process.env.PORT || 8080,
   llm: {
     apiKey: process.env.GEMINI_API_KEY,
-    model: process.env.LLM_MODEL || "gemini-1.5-flash",
+    model: process.env.LLM_MODEL || "gemini-2.0-flash",
   },
   reportLanguage: process.env.REPORT_LANGUAGE || "vi",
   brandGuidelinePath: process.env.BRAND_GUIDELINE_PATH || "./brand-guideline.json",
