@@ -112,7 +112,7 @@ const defaultDeprecatedLogoContents = loadDeprecatedLogoContents(defaultBrandGui
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
-    geminiApiKey: process.env.GEMINI_API_KEY ? `set (${process.env.GEMINI_API_KEY.slice(0, 6)}...)` : "NOT SET",
+    openrouterApiKey: process.env.OPENROUTER_API_KEY ? `set (${process.env.OPENROUTER_API_KEY.slice(0, 6)}...)` : "NOT SET",
     model: config.llm.model,
     brandGuidelineLoaded: !!defaultBrandGuideline,
     projectRoot: PROJECT_ROOT,

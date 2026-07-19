@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "./config.js";
 import { buildMessages, buildCompareMessages } from "./promptBuilder.js";
 
@@ -186,50 +185,33 @@ export function safeParseLlmResponse(rawText, options = {}) {
   }
 }
 
-function convertMessagesForGemini(messages) {
-  const systemMsg = messages.find((m) => m.role === "system");
-  const chatMessages = messages.filter((m) => m.role !== "system");
-
-  const contents = chatMessages.map((msg) => ({
-    role: msg.role === "assistant" ? "model" : "user",
-    parts: Array.isArray(msg.content)
-      ? msg.content.map((part) => {
-          if (part.type === "text") return { text: part.text };
-          if (part.type === "image_url") {
-            const url = part.image_url.url;
-            if (url.startsWith("data:")) {
-              const [meta, data] = url.split(",");
-              const mimeType = meta.replace("data:", "").replace(";base64", "");
-              return { inlineData: { mimeType, data } };
-            }
-          }
-          return { text: typeof part === "string" ? part : JSON.stringify(part) };
-        })
-      : [{ text: msg.content }],
-  }));
-
-  return { systemInstruction: systemMsg?.content, contents };
-}
-
 async function callLlm(messages, parseOptions) {
   if (!config.llm.apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
+    throw new Error("OPENROUTER_API_KEY is not configured");
   }
 
-  const { systemInstruction, contents } = convertMessagesForGemini(messages);
-
-  const genAI = new GoogleGenerativeAI(config.llm.apiKey);
-  const model = genAI.getGenerativeModel({
-    model: config.llm.model,
-    systemInstruction,
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${config.llm.apiKey}`,
+      "HTTP-Referer": "https://ai-design-critic-agent.vercel.app",
+      "X-Title": "AI Design Critic Agent",
+    },
+    body: JSON.stringify({
+      model: config.llm.model,
+      messages,
+      max_tokens: 8192,
+    }),
   });
 
-  const geminiResult = await model.generateContent({
-    contents,
-    generationConfig: { maxOutputTokens: 8192 },
-  });
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`LLM request failed (${response.status}): ${errorBody}`);
+  }
 
-  const content = geminiResult.response.text();
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
   if (!content) {
     throw new Error("LLM response did not contain any content");
   }
