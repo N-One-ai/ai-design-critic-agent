@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.3",
+    "@google/generative-ai": "^0.24.1",
     "express": "^4.19.2"
   }
 }

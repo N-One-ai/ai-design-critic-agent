@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "./config.js";
 import { buildMessages, buildCompareMessages } from "./promptBuilder.js";
 
@@ -186,44 +186,50 @@ export function safeParseLlmResponse(rawText, options = {}) {
   }
 }
 
-function convertContentForAnthropic(content) {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return content;
-  return content.map((part) => {
-    if (part.type === "image_url") {
-      const url = part.image_url.url;
-      if (url.startsWith("data:")) {
-        const [meta, data] = url.split(",");
-        const mediaType = meta.replace("data:", "").replace(";base64", "");
-        return { type: "image", source: { type: "base64", media_type: mediaType, data } };
-      }
-      return { type: "image", source: { type: "url", url } };
-    }
-    return part;
-  });
+function convertMessagesForGemini(messages) {
+  const systemMsg = messages.find((m) => m.role === "system");
+  const chatMessages = messages.filter((m) => m.role !== "system");
+
+  const contents = chatMessages.map((msg) => ({
+    role: msg.role === "assistant" ? "model" : "user",
+    parts: Array.isArray(msg.content)
+      ? msg.content.map((part) => {
+          if (part.type === "text") return { text: part.text };
+          if (part.type === "image_url") {
+            const url = part.image_url.url;
+            if (url.startsWith("data:")) {
+              const [meta, data] = url.split(",");
+              const mimeType = meta.replace("data:", "").replace(";base64", "");
+              return { inlineData: { mimeType, data } };
+            }
+          }
+          return { text: typeof part === "string" ? part : JSON.stringify(part) };
+        })
+      : [{ text: msg.content }],
+  }));
+
+  return { systemInstruction: systemMsg?.content, contents };
 }
 
 async function callLlm(messages, parseOptions) {
   if (!config.llm.apiKey) {
-    throw new Error("ANTHROPIC_API_KEY is not configured");
+    throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  const anthropic = new Anthropic({ apiKey: config.llm.apiKey });
+  const { systemInstruction, contents } = convertMessagesForGemini(messages);
 
-  const systemMessage = messages.find((m) => m.role === "system");
-  const userMessages = messages
-    .filter((m) => m.role !== "system")
-    .map((m) => ({ role: m.role, content: convertContentForAnthropic(m.content) }));
-
-  const stream = anthropic.messages.stream({
+  const genAI = new GoogleGenerativeAI(config.llm.apiKey);
+  const model = genAI.getGenerativeModel({
     model: config.llm.model,
-    max_tokens: 8192,
-    system: systemMessage?.content,
-    messages: userMessages,
+    systemInstruction,
   });
 
-  const response = await stream.finalMessage();
-  const content = response.content?.[0]?.text;
+  const geminiResult = await model.generateContent({
+    contents,
+    generationConfig: { maxOutputTokens: 8192 },
+  });
+
+  const content = geminiResult.response.text();
   if (!content) {
     throw new Error("LLM response did not contain any content");
   }
