@@ -110,7 +110,13 @@ const defaultOfficialLogoContents = loadOfficialLogoContents(defaultBrandGuideli
 const defaultDeprecatedLogoContents = loadDeprecatedLogoContents(defaultBrandGuideline);
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json({
+    status: "ok",
+    geminiApiKey: process.env.GEMINI_API_KEY ? `set (${process.env.GEMINI_API_KEY.slice(0, 6)}...)` : "NOT SET",
+    model: config.llm.model,
+    brandGuidelineLoaded: !!defaultBrandGuideline,
+    projectRoot: PROJECT_ROOT,
+  });
 });
 
 app.get("/brand-guideline", (req, res) => {
