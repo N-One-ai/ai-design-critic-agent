@@ -28,7 +28,9 @@
     line-height: 1.5;
   }
   header {
-    background: linear-gradient(135deg, var(--primary), #1747d6 65%, #00CF6A 160%);
+    background:
+      radial-gradient(circle at 90% 30%, rgba(0, 207, 106, 0.18), transparent 45%),
+      linear-gradient(90deg, #0033C9 0%, #0066FF 45%, #00CF6A 100%);
     color: #fff;
     padding: 40px 0;
   }
@@ -1089,7 +1091,16 @@
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        const hint = res.status === 413 ? 'Ảnh quá lớn, vui lòng chọn ảnh nhỏ hơn.' : rawText.slice(0, 120);
+        reportContainer.innerHTML = `<div class="error-box">Lỗi ${res.status}: ${hint}</div>`;
+        setStatus('Lỗi', 'status-error');
+        return;
+      }
 
       if (!res.ok) {
         reportContainer.innerHTML = `<div class="error-box">Lỗi: ${data.error || res.statusText}</div>`;

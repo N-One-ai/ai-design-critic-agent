@@ -1,9 +1,13 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import { config } from "./config.js";
 import { analyzeDesign, compareDesigns } from "./llmClient.js";
 import { renderMarkdownReport, renderCompareReport, computeOverallScore } from "./report.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(__dirname, "..");
 
 const app = express();
 app.use(express.json({ limit: "15mb" }));
@@ -23,11 +27,12 @@ function resolveImageContent(image) {
 }
 
 function loadDefaultBrandGuideline() {
+  const guidelinePath = path.resolve(PROJECT_ROOT, config.brandGuidelinePath);
   try {
-    const raw = fs.readFileSync(path.resolve(config.brandGuidelinePath), "utf-8");
+    const raw = fs.readFileSync(guidelinePath, "utf-8");
     return JSON.parse(raw);
   } catch (err) {
-    console.warn(`No default brand guideline loaded (${config.brandGuidelinePath}): ${err.message}`);
+    console.warn(`No default brand guideline loaded (${guidelinePath}): ${err.message}`);
     return null;
   }
 }
@@ -35,7 +40,7 @@ function loadDefaultBrandGuideline() {
 function loadDefaultLogoContent(brandGuideline) {
   const logoPath = brandGuideline?.logo?.primaryLogo || config.logoPath;
   try {
-    const buffer = fs.readFileSync(path.resolve(logoPath));
+    const buffer = fs.readFileSync(path.resolve(PROJECT_ROOT, logoPath));
     const ext = path.extname(logoPath).slice(1) || "png";
     return `data:image/${ext};base64,${buffer.toString("base64")}`;
   } catch (err) {
@@ -50,7 +55,7 @@ function loadDefaultTrademarkContents(brandGuideline) {
     .map((variant) => {
       const file = typeof variant === "string" ? variant : variant.file;
       try {
-        const buffer = fs.readFileSync(path.resolve(file));
+        const buffer = fs.readFileSync(path.resolve(PROJECT_ROOT, file));
         const ext = path.extname(file).slice(1) || "png";
         return { file, content: `data:image/${ext};base64,${buffer.toString("base64")}` };
       } catch (err) {
@@ -66,7 +71,7 @@ function loadOfficialLogoContents(brandGuideline) {
   return files
     .map((file) => {
       try {
-        const buffer = fs.readFileSync(path.resolve(file));
+        const buffer = fs.readFileSync(path.resolve(PROJECT_ROOT, file));
         const ext = path.extname(file).slice(1) || "png";
         return { file, content: `data:image/${ext};base64,${buffer.toString("base64")}` };
       } catch (err) {
@@ -82,7 +87,7 @@ function loadDeprecatedLogoContents(brandGuideline) {
   return assets
     .map((file) => {
       try {
-        const buffer = fs.readFileSync(path.resolve(file));
+        const buffer = fs.readFileSync(path.resolve(PROJECT_ROOT, file));
         const ext = path.extname(file).slice(1) || "png";
         return { file, content: `data:image/${ext};base64,${buffer.toString("base64")}` };
       } catch (err) {
@@ -249,6 +254,14 @@ app.post("/compare", async (req, res) => {
     console.error("Comparison failed:", err);
     res.status(500).json({ error: err.message });
   }
+});
+
+app.use((err, req, res, next) => {
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ error: "Ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 15MB." });
+  }
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: err.message || "Internal server error" });
 });
 
 app.listen(config.port, "0.0.0.0", () => {

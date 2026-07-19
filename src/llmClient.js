@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { config } from "./config.js";
 import { buildMessages, buildCompareMessages } from "./promptBuilder.js";
 
@@ -185,31 +186,44 @@ export function safeParseLlmResponse(rawText, options = {}) {
   }
 }
 
+function convertContentForAnthropic(content) {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return content;
+  return content.map((part) => {
+    if (part.type === "image_url") {
+      const url = part.image_url.url;
+      if (url.startsWith("data:")) {
+        const [meta, data] = url.split(",");
+        const mediaType = meta.replace("data:", "").replace(";base64", "");
+        return { type: "image", source: { type: "base64", media_type: mediaType, data } };
+      }
+      return { type: "image", source: { type: "url", url } };
+    }
+    return part;
+  });
+}
+
 async function callLlm(messages, parseOptions) {
   if (!config.llm.apiKey) {
-    throw new Error("LLM_API_KEY is not configured");
+    throw new Error("ANTHROPIC_API_KEY is not configured");
   }
 
-  const response = await fetch(`${config.llm.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.llm.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: config.llm.model,
-      messages,
-      temperature: 0.2,
-    }),
+  const anthropic = new Anthropic({ apiKey: config.llm.apiKey });
+
+  const systemMessage = messages.find((m) => m.role === "system");
+  const userMessages = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({ role: m.role, content: convertContentForAnthropic(m.content) }));
+
+  const stream = anthropic.messages.stream({
+    model: config.llm.model,
+    max_tokens: 8192,
+    system: systemMessage?.content,
+    messages: userMessages,
   });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`LLM request failed (${response.status}): ${errorBody}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const response = await stream.finalMessage();
+  const content = response.content?.[0]?.text;
   if (!content) {
     throw new Error("LLM response did not contain any content");
   }
