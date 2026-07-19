@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createRequire } from "module";
 import express from "express";
 import { config } from "./config.js";
 import { analyzeDesign, compareDesigns } from "./llmClient.js";
@@ -8,11 +9,12 @@ import { renderMarkdownReport, renderCompareReport, computeOverallScore } from "
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
+const require = createRequire(import.meta.url);
 
 const app = express();
 app.use(express.json({ limit: "15mb" }));
-app.use(express.static(path.resolve("public")));
-app.use("/assets", express.static(path.resolve("assets")));
+app.use(express.static(path.resolve(PROJECT_ROOT, "public")));
+app.use("/assets", express.static(path.resolve(PROJECT_ROOT, "assets")));
 
 function resolveImageContent(image) {
   if (!image) return null;
@@ -27,13 +29,16 @@ function resolveImageContent(image) {
 }
 
 function loadDefaultBrandGuideline() {
-  const guidelinePath = path.resolve(PROJECT_ROOT, config.brandGuidelinePath);
   try {
-    const raw = fs.readFileSync(guidelinePath, "utf-8");
-    return JSON.parse(raw);
+    return require("../brand-guideline.json");
   } catch (err) {
-    console.warn(`No default brand guideline loaded (${guidelinePath}): ${err.message}`);
-    return null;
+    const guidelinePath = path.resolve(PROJECT_ROOT, config.brandGuidelinePath);
+    try {
+      return JSON.parse(fs.readFileSync(guidelinePath, "utf-8"));
+    } catch (err2) {
+      console.warn(`No default brand guideline loaded (${guidelinePath}): ${err2.message}`);
+      return null;
+    }
   }
 }
 
