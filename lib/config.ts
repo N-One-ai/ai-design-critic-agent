@@ -1,0 +1,9 @@
+export const config = {
+  llm: {
+    apiKey: process.env.GEMINI_API_KEY,
+    model: process.env.LLM_MODEL || "gemini-2.0-flash",
+  },
+  reportLanguage: process.env.REPORT_LANGUAGE || "vi",
+  brandGuidelinePath: process.env.BRAND_GUIDELINE_PATH || "./brand-guideline.json",
+  logoPath: process.env.LOGO_PATH || "./assets/logo-primary.png",
+};

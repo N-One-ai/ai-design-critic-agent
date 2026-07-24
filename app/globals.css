@@ -1,0 +1,290 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Light theme ── */
+:root {
+  --background: #f5f6fa;
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --border: #e0e3eb;
+  --foreground: #1a1d29;
+  --muted: #6b7280;
+  --primary: #0033c9;
+  --primary-hover: #002aa3;
+  --accent: #00cf6a;
+  --accent-text: #003d1f;
+
+  --header-from: #0033c9;
+  --header-via: #0066ff;
+  --header-to: #00cf6a;
+  --header-radial: rgba(0, 207, 106, 0.18);
+
+  --radar-fill: rgba(0, 207, 106, 0.25);
+  --radar-border: #00cf6a;
+  --radar-point: #0033c9;
+  --radar-grid: #e0e3eb;
+  --radar-label: #1a1d29;
+  --radar-legend: #1a1d29;
+  --radar-ticks: #6b7280;
+
+  --score-progress-bg: #eef2f7;
+  --score-fill: #00cf6a;
+
+  --status-idle-bg: #f1f3f9;
+  --status-idle-text: #6b7280;
+  --status-loading-bg: #eef2ff;
+  --status-loading-text: #0033c9;
+  --status-done-bg: #e6fbf0;
+  --status-done-text: #00cf6a;
+  --status-error-bg: #fef2f2;
+  --status-error-text: #b91c1c;
+
+  --code-bg: #f1f3f9;
+  --prompt-pre-bg: #f8f9fc;
+  --prompt-card-meta-bg: #f1f3f9;
+}
+
+/* ── Dark theme ── */
+.dark {
+  --background: #0b1220;
+  --surface: #1e293b;
+  --surface-secondary: #111827;
+  --border: #334155;
+  --foreground: #f1f5f9;
+  --muted: #94a3b8;
+  --primary: #2f6bff;
+  --primary-hover: #1a5ce6;
+  --accent: #00cf6a;
+  --accent-text: #dcfce7;
+
+  --header-from: #001b75;
+  --header-via: #0d3cc8;
+  --header-to: #00a85b;
+  --header-radial: rgba(0, 207, 106, 0.12);
+
+  --radar-fill: rgba(0, 207, 106, 0.2);
+  --radar-border: #00cf6a;
+  --radar-point: #2f6bff;
+  --radar-grid: #334155;
+  --radar-label: #e2e8f0;
+  --radar-legend: #e2e8f0;
+  --radar-ticks: #94a3b8;
+
+  --score-progress-bg: #1e293b;
+  --score-fill: #00cf6a;
+
+  --status-idle-bg: #1e293b;
+  --status-idle-text: #94a3b8;
+  --status-loading-bg: #1e3a8a22;
+  --status-loading-text: #93c5fd;
+  --status-done-bg: #14532d22;
+  --status-done-text: #4ade80;
+  --status-error-bg: #7f1d1d22;
+  --status-error-text: #fca5a5;
+
+  --code-bg: #1e293b;
+  --prompt-pre-bg: #0f1a2e;
+  --prompt-card-meta-bg: #1e293b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  line-height: 1.5;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ── Markdown report body ── */
+.markdown-body h1 {
+  font-size: 22px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+.markdown-body h2 {
+  font-size: 17px;
+  margin-top: 24px;
+  color: var(--primary);
+}
+.markdown-body h3 {
+  font-size: 15px;
+}
+.markdown-body .section-title {
+  font-size: 17px;
+  color: var(--primary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+.markdown-body ul {
+  padding-left: 20px;
+}
+.markdown-body code {
+  background: var(--code-bg);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+.markdown-body pre {
+  position: relative;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 36px 14px 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ── Checklist ── */
+.markdown-body .checklist {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.markdown-body .checklist li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.markdown-body .checklist li::marker {
+  display: none;
+}
+.check-item,
+.metric-item,
+.status-item {
+  margin-left: 24px;
+}
+.issue-item,
+.improvement-item {
+  margin-left: 56px;
+}
+.checklist-icon {
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── Copy button ── */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.copy-btn:hover {
+  background: var(--surface-secondary);
+  color: var(--primary);
+}
+
+/* ── Prompt cards ── */
+.markdown-body .prompt-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  margin: 12px 0;
+  overflow: hidden;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.markdown-body .prompt-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+}
+.markdown-body .prompt-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.markdown-body .prompt-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.markdown-body .prompt-card-meta {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--prompt-card-meta-bg);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.markdown-body .prompt-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.markdown-body .prompt-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.markdown-body .prompt-action-btn:hover {
+  background: var(--surface-secondary);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.markdown-body .prompt-action-btn.copied {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.markdown-body .prompt-toggle-btn .chevron-down-icon {
+  display: none;
+}
+.markdown-body .prompt-card[data-expanded="true"] .prompt-toggle-btn .chevron-right-icon {
+  display: none;
+}
+.markdown-body .prompt-card[data-expanded="true"] .prompt-toggle-btn .chevron-down-icon {
+  display: inline-block;
+}
+.markdown-body .prompt-card-body {
+  border-top: 1px solid var(--border);
+  padding: 14px;
+}
+.markdown-body .prompt-card-body.hidden {
+  display: none;
+}
+.markdown-body .prompt-card-body pre {
+  margin: 0;
+  padding: 14px;
+  position: static;
+  background: var(--prompt-pre-bg);
+}
