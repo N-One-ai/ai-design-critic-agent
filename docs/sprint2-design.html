@@ -1,0 +1,1525 @@
+<!doctype html>
+<title>ZaloPay Creative Platform — Sprint 2: UX & Design Architecture</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* ── TOKEN SYSTEM ─────────────────────────────────────────── */
+:root {
+  --bg:       #F8FAFC;
+  --surface:  #FFFFFF;
+  --raised:   #F1F5F9;
+  --border:   #E2E8F0;
+  --border-strong: #CBD5E1;
+  --tx:       #0F1B2D;
+  --tx-2:     #475569;
+  --tx-3:     #94A3B8;
+  --blue:     #0033C9;
+  --blue-dim: rgba(0,51,201,.08);
+  --blue-mid: rgba(0,51,201,.15);
+  --green:    #007A3E;
+  --green-dim:rgba(0,122,62,.08);
+  --yellow:   #B45309;
+  --red:      #DC2626;
+  --radius:   16px;
+  --code-bg:  #0D1829;
+  --code-tx:  #C8D8F0;
+  --mono: 'SFMono-Regular','SF Mono','Cascadia Code',Consolas,monospace;
+  --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#070E1E; --surface:#0D1829; --raised:#111E30;
+    --border:#1A2840; --border-strong:#243654;
+    --tx:#E8F0FC; --tx-2:#7C9BB5; --tx-3:#3D5572;
+    --blue:#4A80FF; --blue-dim:rgba(74,128,255,.10); --blue-mid:rgba(74,128,255,.18);
+    --green:#00CF6A; --green-dim:rgba(0,207,106,.10);
+    --yellow:#F59E0B; --red:#EF4444;
+    --code-bg:#060C18; --code-tx:#A8C4E0;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#070E1E; --surface:#0D1829; --raised:#111E30;
+  --border:#1A2840; --border-strong:#243654;
+  --tx:#E8F0FC; --tx-2:#7C9BB5; --tx-3:#3D5572;
+  --blue:#4A80FF; --blue-dim:rgba(74,128,255,.10); --blue-mid:rgba(74,128,255,.18);
+  --green:#00CF6A; --green-dim:rgba(0,207,106,.10);
+  --yellow:#F59E0B; --red:#EF4444;
+  --code-bg:#060C18; --code-tx:#A8C4E0;
+}
+:root[data-theme="light"]{
+  --bg:#F8FAFC; --surface:#FFFFFF; --raised:#F1F5F9;
+  --border:#E2E8F0; --border-strong:#CBD5E1;
+  --tx:#0F1B2D; --tx-2:#475569; --tx-3:#94A3B8;
+  --blue:#0033C9; --blue-dim:rgba(0,51,201,.08); --blue-mid:rgba(0,51,201,.15);
+  --green:#007A3E; --green-dim:rgba(0,122,62,.08);
+  --yellow:#B45309; --red:#DC2626;
+  --code-bg:#0D1829; --code-tx:#C8D8F0;
+}
+
+/* ── RESET ────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--tx);
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── TOP NAV ──────────────────────────────────────────────── */
+.topnav{
+  position:sticky;top:0;z-index:200;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  display:flex;align-items:center;gap:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.topnav::-webkit-scrollbar{display:none}
+.topnav-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 0;
+  margin-right:28px;
+  flex-shrink:0;
+  border-right:1px solid var(--border);
+  padding-right:28px;
+}
+.topnav-brand-mark{
+  width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(135deg,#0033C9,#0055FF);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;letter-spacing:-.5px;
+}
+.topnav-brand-name{font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap}
+.topnav-links{display:flex;align-items:center;gap:4px}
+.topnav-link{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 10px;
+  border-radius:8px;
+  font-size:12px;font-weight:500;
+  color:var(--tx-2);
+  text-decoration:none;
+  white-space:nowrap;
+  transition:background .12s,color .12s;
+}
+.topnav-link:hover{background:var(--raised);color:var(--tx)}
+.topnav-link-num{
+  font-size:10px;font-weight:700;
+  color:var(--blue);
+  background:var(--blue-dim);
+  padding:1px 5px;border-radius:4px;
+  font-variant-numeric:tabular-nums;
+}
+.topnav-right{margin-left:auto;padding-left:16px;flex-shrink:0;display:flex;gap:8px;align-items:center}
+.theme-btn{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:var(--raised);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  color:var(--tx-2);transition:background .12s,color .12s;
+}
+.theme-btn:hover{background:var(--border);color:var(--tx)}
+
+/* ── LAYOUT ───────────────────────────────────────────────── */
+.page{max-width:1080px;margin:0 auto;padding:48px 32px 96px}
+
+/* ── HERO ─────────────────────────────────────────────────── */
+.hero{
+  padding:48px 0 56px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:56px;
+}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;
+  letter-spacing:.02em;
+}
+.pill-blue{background:var(--blue-dim);color:var(--blue);border:1px solid var(--blue-mid)}
+.pill-green{background:var(--green-dim);color:var(--green);border:1px solid var(--green-dim)}
+.pill-dim{background:var(--raised);color:var(--tx-2);border:1px solid var(--border)}
+.hero h1{
+  font-size:clamp(28px,4vw,42px);
+  font-weight:700;line-height:1.15;
+  letter-spacing:-.03em;
+  color:var(--tx);
+  text-wrap:balance;
+  margin-bottom:16px;
+}
+.hero h1 span{color:var(--blue)}
+.hero-sub{
+  font-size:16px;color:var(--tx-2);
+  max-width:620px;line-height:1.6;
+  margin-bottom:28px;
+}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap}
+.hero-meta-item{
+  display:flex;flex-direction:column;gap:2px;
+}
+.hero-meta-label{font-size:11px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.07em}
+.hero-meta-value{font-size:14px;font-weight:500;color:var(--tx-2)}
+
+/* ── SECTION ──────────────────────────────────────────────── */
+.section{
+  margin-bottom:72px;
+  scroll-margin-top:64px;
+}
+.section-header{
+  display:flex;align-items:flex-start;gap:14px;
+  margin-bottom:28px;
+  padding-bottom:16px;
+  border-bottom:1px solid var(--border);
+}
+.section-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:8px;
+  background:var(--blue-dim);
+  color:var(--blue);
+  font-size:12px;font-weight:700;
+  flex-shrink:0;margin-top:2px;
+  font-variant-numeric:tabular-nums;
+}
+.section-title-wrap{flex:1}
+.section-title{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--tx);margin-bottom:4px}
+.section-desc{font-size:13px;color:var(--tx-2)}
+
+/* ── CARDS ────────────────────────────────────────────────── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px 24px;
+  margin-bottom:16px;
+}
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.card h4{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.card p{font-size:13px;color:var(--tx-2);line-height:1.6}
+
+/* ── TABLE ────────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--raised)}
+th{
+  padding:10px 16px;text-align:left;
+  font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--tx-3);
+  border-bottom:1px solid var(--border);
+}
+td{
+  padding:10px 16px;
+  color:var(--tx-2);
+  border-bottom:1px solid var(--border);
+  vertical-align:top;
+  line-height:1.5;
+}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--raised)}
+td.tx{color:var(--tx);font-weight:500}
+td code{
+  background:var(--raised);padding:2px 6px;border-radius:4px;
+  font-family:var(--mono);font-size:12px;color:var(--blue);
+}
+td .badge{
+  display:inline-flex;align-items:center;
+  padding:2px 8px;border-radius:999px;
+  font-size:11px;font-weight:600;
+}
+td .badge-g{background:var(--green-dim);color:var(--green)}
+td .badge-b{background:var(--blue-dim);color:var(--blue)}
+td .badge-y{background:rgba(245,158,11,.1);color:var(--yellow)}
+td .badge-r{background:rgba(220,38,38,.1);color:var(--red)}
+
+/* ── CODE / ASCII ─────────────────────────────────────────── */
+.ascii{
+  background:var(--code-bg);
+  border:1px solid rgba(74,128,255,.18);
+  border-radius:var(--radius);
+  overflow-x:auto;
+  padding:24px 28px;
+  margin-bottom:16px;
+}
+.ascii pre{
+  font-family:var(--mono);
+  font-size:12px;
+  line-height:1.55;
+  color:var(--code-tx);
+  white-space:pre;
+  tab-size:4;
+}
+.ascii-label{
+  font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em;
+  color:var(--blue);
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.ascii-label::before{content:'';display:block;width:20px;height:1px;background:var(--blue)}
+
+/* ── DESIGN TOKENS ────────────────────────────────────────── */
+.swatch-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.swatch{
+  display:flex;flex-direction:column;gap:6px;
+  min-width:90px;
+}
+.swatch-color{
+  height:48px;border-radius:10px;
+  border:1px solid var(--border);
+}
+.swatch-name{font-size:11px;font-weight:600;color:var(--tx-2)}
+.swatch-hex{font-size:11px;font-family:var(--mono);color:var(--tx-3)}
+
+/* ── JOURNEY ──────────────────────────────────────────────── */
+.journey{
+  display:flex;align-items:flex-start;gap:0;
+  overflow-x:auto;padding-bottom:8px;
+  margin-bottom:16px;
+}
+.journey-step{
+  display:flex;flex-direction:column;align-items:center;
+  flex-shrink:0;
+}
+.journey-node{
+  background:var(--raised);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 14px;
+  font-size:12px;font-weight:500;
+  color:var(--tx);
+  white-space:nowrap;
+  text-align:center;
+  min-width:100px;
+}
+.journey-node.entry{border-color:var(--blue);background:var(--blue-dim);color:var(--blue)}
+.journey-node.exit{border-color:var(--green);background:var(--green-dim);color:var(--green)}
+.journey-sub{font-size:11px;color:var(--tx-3);margin-top:5px;text-align:center;max-width:110px}
+.journey-arrow{
+  width:28px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:10px;
+  color:var(--tx-3);font-size:14px;
+}
+
+/* ── TREE ─────────────────────────────────────────────────── */
+.tree{
+  font-family:var(--mono);font-size:13px;color:var(--tx-2);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 24px;
+  line-height:1.8;
+  overflow-x:auto;
+}
+.tree .root{color:var(--tx);font-weight:600}
+.tree .branch{color:var(--tx-3)}
+.tree .leaf{color:var(--tx-2)}
+.tree .label{color:var(--blue)}
+.tree .new{color:var(--green);font-size:11px;font-weight:600;margin-left:4px}
+
+/* ── LIST ─────────────────────────────────────────────────── */
+.rec-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.rec-list li{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:14px 18px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+.rec-num{
+  width:24px;height:24px;border-radius:6px;
+  background:var(--blue-dim);color:var(--blue);
+  font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  font-variant-numeric:tabular-nums;
+}
+.rec-body{flex:1}
+.rec-title{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:3px}
+.rec-desc{font-size:13px;color:var(--tx-2);line-height:1.5}
+
+/* ── INTERACTION SPEC ─────────────────────────────────────── */
+.ispec{
+  display:grid;grid-template-columns:180px 1fr;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  margin-bottom:8px;
+}
+.ispec-trigger{
+  padding:12px 16px;
+  background:var(--raised);
+  border-right:1px solid var(--border);
+  font-size:12px;font-weight:600;color:var(--tx-2);
+  text-transform:uppercase;letter-spacing:.05em;
+  display:flex;align-items:center;
+}
+.ispec-detail{padding:12px 16px;font-size:13px;color:var(--tx-2);line-height:1.5}
+.ispec-detail code{font-family:var(--mono);font-size:12px;color:var(--blue)}
+
+/* ── COMPARE TABLE ────────────────────────────────────────── */
+.compare .before{color:var(--red)}
+.compare .after{color:var(--green)}
+
+/* ── TYPOGRAPHY SCALE ─────────────────────────────────────── */
+.type-scale{display:flex;flex-direction:column;gap:0}
+.type-row{
+  display:flex;align-items:baseline;gap:24px;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.type-row:last-child{border-bottom:none}
+.type-meta{min-width:200px;flex-shrink:0}
+.type-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-3)}
+.type-spec{font-size:11px;font-family:var(--mono);color:var(--tx-3)}
+.type-preview{flex:1;color:var(--tx)}
+
+/* ── SPACING GRID ─────────────────────────────────────────── */
+.space-grid{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.space-item{display:flex;flex-direction:column;align-items:center;gap:6px}
+.space-bar{width:4px;background:var(--blue);border-radius:2px}
+.space-label{font-size:11px;font-family:var(--mono);color:var(--tx-3)}
+
+/* ── FOOTER ───────────────────────────────────────────────── */
+.doc-footer{
+  margin-top:80px;
+  padding-top:32px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;
+}
+.doc-footer-note{font-size:13px;color:var(--tx-2)}
+.approval-box{
+  background:var(--green-dim);
+  border:1px solid var(--green);
+  border-radius:12px;
+  padding:16px 20px;
+  font-size:13px;
+  color:var(--tx);
+  max-width:420px;
+  width:100%;
+}
+.approval-box strong{color:var(--green);display:block;margin-bottom:4px;font-size:14px}
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media(max-width:768px){
+  .topnav{padding:0 16px}
+  .page{padding:32px 16px 64px}
+  .card-grid,.card-grid-3{grid-template-columns:1fr}
+  .hero h1{font-size:26px}
+  .type-row{flex-direction:column;gap:6px}
+  .type-meta{min-width:unset}
+}
+</style>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-brand">
+    <div class="topnav-brand-mark">Z</div>
+    <span class="topnav-brand-name">ZCP · Sprint 2</span>
+  </div>
+  <div class="topnav-links">
+    <a class="topnav-link" href="#s1"><span class="topnav-link-num">01</span>Info Arch</a>
+    <a class="topnav-link" href="#s2"><span class="topnav-link-num">02</span>Journeys</a>
+    <a class="topnav-link" href="#s3"><span class="topnav-link-num">03</span>Nav Map</a>
+    <a class="topnav-link" href="#s4"><span class="topnav-link-num">04</span>Sidebar</a>
+    <a class="topnav-link" href="#s5"><span class="topnav-link-num">05</span>Workspace</a>
+    <a class="topnav-link" href="#s6"><span class="topnav-link-num">06</span>Right Panel</a>
+    <a class="topnav-link" href="#s7"><span class="topnav-link-num">07</span>Grid</a>
+    <a class="topnav-link" href="#s8"><span class="topnav-link-num">08</span>Design Sys</a>
+    <a class="topnav-link" href="#s9"><span class="topnav-link-num">09</span>Components</a>
+    <a class="topnav-link" href="#s10"><span class="topnav-link-num">10</span>Responsive</a>
+    <a class="topnav-link" href="#s11"><span class="topnav-link-num">11</span>Interaction</a>
+    <a class="topnav-link" href="#s12"><span class="topnav-link-num">12</span>UX Recs</a>
+    <a class="topnav-link" href="#s13"><span class="topnav-link-num">13</span>Expansion</a>
+    <a class="topnav-link" href="#s14"><span class="topnav-link-num">14</span>Improvements</a>
+    <a class="topnav-link" href="#wireframes"><span class="topnav-link-num">↓</span>Wireframes</a>
+  </div>
+  <div class="topnav-right">
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">◐</button>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-pills">
+    <span class="pill pill-blue">Sprint 2 · Design Architecture</span>
+    <span class="pill pill-green">Awaiting Approval</span>
+    <span class="pill pill-dim">ZaloPay Creative Platform</span>
+  </div>
+  <h1>UX &amp; Interface<br><span>Architecture Spec</span></h1>
+  <p class="hero-sub">Complete product design, information architecture, and UI specification for the ZaloPay Creative Platform — from sidebar structure to interaction timing. No code. All decisions.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Date</span>
+      <span class="hero-meta-value">24 July 2026</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Target Users</span>
+      <span class="hero-meta-value">Marketing · Design · Merchant · BD · AI Creators</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Modules (v1)</span>
+      <span class="hero-meta-value">10 navigation items, 7 primary workspaces</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Scale Target</span>
+      <span class="hero-meta-value">30+ modules without restructuring</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─────────────────────────────────────────────── S1 ──── -->
+<section class="section" id="s1">
+  <div class="section-header">
+    <span class="section-num">1</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Information Architecture</h2>
+      <p class="section-desc">Full content hierarchy of the platform — every node, grouped by function</p>
+    </div>
+  </div>
+  <div class="tree">
+<span class="root">ZaloPay Creative Platform</span>
+<span class="branch">│</span>
+<span class="branch">├── </span><span class="label">Dashboard</span>
+<span class="branch">│   ├── </span><span class="leaf">Quick Actions</span>
+<span class="branch">│   ├── </span><span class="leaf">Recent Projects</span>
+<span class="branch">│   ├── </span><span class="leaf">Usage Statistics</span>
+<span class="branch">│   └── </span><span class="leaf">Team Activity Feed</span>
+<span class="branch">│</span>
+<span class="branch">├── </span><span class="label">CREATE GROUP</span>
+<span class="branch">│   ├── </span><span class="label">Brand Guideline Checker</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Single Image Check</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Batch Check <span class="new">NEW</span></span>
+<span class="branch">│   │   ├── </span><span class="leaf">Check History</span>
+<span class="branch">│   │   └── </span><span class="leaf">Analysis Settings</span>
+<span class="branch">│   │</span>
+<span class="branch">│   ├── </span><span class="label">Banner Generator</span>
+<span class="branch">│   │   ├── </span><span class="leaf">New Banner</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Template Gallery</span>
+<span class="branch">│   │   ├── </span><span class="leaf">My Banners</span>
+<span class="branch">│   │   └── </span><span class="leaf">Canvas Editor</span>
+<span class="branch">│   │</span>
+<span class="branch">│   ├── </span><span class="label">Image Generator</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Text to Image</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Image to Image</span>
+<span class="branch">│   │   └── </span><span class="leaf">Upscale &amp; Edit</span>
+<span class="branch">│   │</span>
+<span class="branch">│   ├── </span><span class="label">Video Generator</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Text to Video</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Image to Video</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Storyboard Editor</span>
+<span class="branch">│   │   └── </span><span class="leaf">My Videos</span>
+<span class="branch">│   │</span>
+<span class="branch">│   └── </span><span class="label">Prompt Studio</span>
+<span class="branch">│       ├── </span><span class="leaf">Prompt Editor</span>
+<span class="branch">│       ├── </span><span class="leaf">Optimize Prompt</span>
+<span class="branch">│       ├── </span><span class="leaf">Prompt Translation (VI ↔ EN)</span>
+<span class="branch">│       └── </span><span class="leaf">Prompt Library</span>
+<span class="branch">│</span>
+<span class="branch">├── </span><span class="label">MANAGE GROUP</span>
+<span class="branch">│   ├── </span><span class="label">Asset Library</span>
+<span class="branch">│   │   ├── </span><span class="leaf">All Assets</span>
+<span class="branch">│   │   ├── </span><span class="leaf">Images / Videos / Banners</span>
+<span class="branch">│   │   └── </span><span class="leaf">Brand Kit (logo, colors, fonts)</span>
+<span class="branch">│   │</span>
+<span class="branch">│   ├── </span><span class="label">History</span>
+<span class="branch">│   │   ├── </span><span class="leaf">All Activity (timeline)</span>
+<span class="branch">│   │   ├── </span><span class="leaf">AI Generations</span>
+<span class="branch">│   │   └── </span><span class="leaf">Brand Checks</span>
+<span class="branch">│   │</span>
+<span class="branch">│   └── </span><span class="label">Team Workspace</span>
+<span class="branch">│       ├── </span><span class="leaf">Members &amp; Roles</span>
+<span class="branch">│       ├── </span><span class="leaf">Shared Projects</span>
+<span class="branch">│       └── </span><span class="leaf">Permissions</span>
+<span class="branch">│</span>
+<span class="branch">└── </span><span class="label">SYSTEM</span>
+<span class="branch">    └── </span><span class="label">Settings</span>
+<span class="branch">        ├── </span><span class="leaf">Account &amp; Profile</span>
+<span class="branch">        ├── </span><span class="leaf">Brand Configuration (multi-brand)</span>
+<span class="branch">        ├── </span><span class="leaf">API Keys</span>
+<span class="branch">        ├── </span><span class="leaf">Notifications</span>
+<span class="branch">        └── </span><span class="leaf">Usage &amp; Billing</span>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S2 ──── -->
+<section class="section" id="s2">
+  <div class="section-header">
+    <span class="section-num">2</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">User Journeys</h2>
+      <p class="section-desc">End-to-end flows for every primary module</p>
+    </div>
+  </div>
+
+  <div class="card"><h4>Brand Guideline Checker</h4>
+    <div class="journey">
+      <div class="journey-step"><div class="journey-node entry">Enter Module</div><div class="journey-sub">From sidebar or quick-start</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Upload Image</div><div class="journey-sub">Drop or browse, up to 10 MB</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Configure</div><div class="journey-sub">Mode, brand version, weights</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Run Analysis</div><div class="journey-sub">Gemini Vision processes</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">View Scores</div><div class="journey-sub">6 categories + radar chart</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Read Report</div><div class="journey-sub">Markdown, VI language</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node exit">Export / Iterate</div><div class="journey-sub">PDF, share link, or re-upload</div></div>
+    </div>
+  </div>
+
+  <div class="card"><h4>Image Generator</h4>
+    <div class="journey">
+      <div class="journey-step"><div class="journey-node entry">Enter Module</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Write Prompt</div><div class="journey-sub">Or pick example prompt</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Set Params</div><div class="journey-sub">Model, size, style, seed</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Generate</div><div class="journey-sub">1–4 images in parallel</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Review Grid</div><div class="journey-sub">Select, star, compare</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Upscale</div><div class="journey-sub">Optional, 2× or 4×</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node exit">Save / Export</div><div class="journey-sub">Library, PNG, share</div></div>
+    </div>
+  </div>
+
+  <div class="card"><h4>Banner Generator</h4>
+    <div class="journey">
+      <div class="journey-step"><div class="journey-node entry">Enter Module</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Pick Template</div><div class="journey-sub">Or start blank canvas</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Brief / Prompt</div><div class="journey-sub">Campaign description</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Set Size</div><div class="journey-sub">Preset or custom px</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Generate</div><div class="journey-sub">AI fills canvas</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Edit / Refine</div><div class="journey-sub">Canvas tools or re-prompt</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node exit">Export</div><div class="journey-sub">PNG/JPG/PDF, multi-size</div></div>
+    </div>
+  </div>
+
+  <div class="card"><h4>Video Generator</h4>
+    <div class="journey">
+      <div class="journey-step"><div class="journey-node entry">Enter Module</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Concept Input</div><div class="journey-sub">Text description or scene list</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Storyboard</div><div class="journey-sub">Auto-generated, editable</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Set Params</div><div class="journey-sub">Duration, FPS, style</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Generate</div><div class="journey-sub">Clips per scene</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Preview</div><div class="journey-sub">Timeline editor</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node exit">Export</div><div class="journey-sub">MP4, 720p / 1080p</div></div>
+    </div>
+  </div>
+
+  <div class="card"><h4>Prompt Studio</h4>
+    <div class="journey">
+      <div class="journey-step"><div class="journey-node entry">Enter Module</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Choose Mode</div><div class="journey-sub">Create / Optimize / Translate / Analyze</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Input Text</div><div class="journey-sub">Rough idea or draft prompt</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Configure</div><div class="journey-sub">Tone, language, model target</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node">Process</div><div class="journey-sub">AI optimizes / translates</div></div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step"><div class="journey-node exit">Copy / Save</div><div class="journey-sub">One-click copy to clipboard</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S3 ──── -->
+<section class="section" id="s3">
+  <div class="section-header">
+    <span class="section-num">3</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Navigation Map</h2>
+      <p class="section-desc">All navigation paths — primary, secondary, and contextual</p>
+    </div>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Primary Navigation (Sidebar)</h4>
+      <p><strong>OVERVIEW</strong><br>Dashboard</p>
+      <br>
+      <p><strong>CREATE</strong><br>Brand Guideline Checker<br>Banner Generator<br>Image Generator<br>Video Generator<br>Prompt Studio</p>
+      <br>
+      <p><strong>MANAGE</strong><br>Asset Library<br>History<br>Team Workspace</p>
+      <br>
+      <p><strong>SYSTEM</strong><br>Settings</p>
+    </div>
+    <div class="card">
+      <h4>Secondary Navigation (Module Tabs)</h4>
+      <p><strong>Brand Checker</strong><br>Check · History · Settings</p>
+      <br>
+      <p><strong>Banner Generator</strong><br>Create · Templates · My Banners</p>
+      <br>
+      <p><strong>Image Generator</strong><br>Generate · My Library · Upscale</p>
+      <br>
+      <p><strong>Video Generator</strong><br>Create · Storyboard · My Videos</p>
+      <br>
+      <p><strong>Asset Library</strong><br>All · Images · Videos · Banners · Brand Kit</p>
+      <br>
+      <p><strong>History</strong><br>All Activity · Generations · Checks</p>
+    </div>
+  </div>
+  <div class="card">
+    <h4>Global Navigation Surfaces</h4>
+    <p><strong>Command Palette (⌘K)</strong> — Search modules, recent files, actions, shortcuts. Opens as a centered modal overlay. Always accessible.</p>
+    <br>
+    <p><strong>Breadcrumb</strong> — Workspace header shows current path: <code>Dashboard / Image Generator / My Library</code>. Clickable at each node.</p>
+    <br>
+    <p><strong>Workspace Switcher</strong> — Top of sidebar. Dropdown to switch between multiple brand workspaces (e.g. ZaloPay Vietnam, ZaloPay Thailand). Supports multi-org accounts.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S4 ──── -->
+<section class="section" id="s4">
+  <div class="section-header">
+    <span class="section-num">4</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Sidebar Structure</h2>
+      <p class="section-desc">Anatomy, states, and behavior of the persistent left sidebar</p>
+    </div>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Anatomy (Expanded · 240px)</h4>
+      <p><strong>Zone 1 — Brand Header</strong><br>Product logo mark + wordmark. Workspace switcher dropdown below.</p>
+      <br>
+      <p><strong>Zone 2 — Search</strong><br>⌘K command palette trigger. Placeholder: "Search modules…". Never a real input — always fires the palette.</p>
+      <br>
+      <p><strong>Zone 3 — Favorites</strong><br>User-pinned modules. Right-click any nav item to pin. Max 5 favorites. Drag to reorder. Collapsible.</p>
+      <br>
+      <p><strong>Zone 4 — Primary Nav</strong><br>4 groups (OVERVIEW / CREATE / MANAGE / SYSTEM). Each group has a 10px uppercase label, 600 weight, muted color. Nav items: icon (20px) + label + optional badge count.</p>
+      <br>
+      <p><strong>Zone 5 — Footer</strong><br>Notification bell with unread count. Help &amp; docs link. User avatar + name + plan tier. Upgrade CTA if on free plan.</p>
+    </div>
+    <div class="card">
+      <h4>States &amp; Behaviors</h4>
+      <p><strong>Expanded → Collapsed</strong><br>240px → 64px. Toggle button on sidebar edge. Icon-only view. Group labels hidden. Tooltips appear on hover (right side, 200ms delay).</p>
+      <br>
+      <p><strong>Active Item</strong><br>3px left border in primary blue. Background: blue-dim tint. Icon and label take primary color.</p>
+      <br>
+      <p><strong>Hover</strong><br>Background: raised tint. No border change. 80ms transition.</p>
+      <br>
+      <p><strong>Badge</strong><br>Right-aligned pill. Blue for counts. Yellow for "new". Red for alerts. Hidden at count = 0.</p>
+      <br>
+      <p><strong>Nested Sub-items</strong><br>Expandable via chevron. Sub-items appear 8px indented under parent. Parent label becomes "section header". Sub-items are lighter weight.</p>
+      <br>
+      <p><strong>Keyboard</strong><br>Tab to navigate. Enter to select. [ to collapse. ] to expand. / to open command palette.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S5 ──── -->
+<section class="section" id="s5">
+  <div class="section-header">
+    <span class="section-num">5</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Main Workspace Structure</h2>
+      <p class="section-desc">Layout anatomy and per-module content patterns for the center column</p>
+    </div>
+  </div>
+  <div class="card">
+    <h4>Common Workspace Header (All Modules)</h4>
+    <p>Every workspace shares the same 60px header zone:<br><br>
+    <strong>Left:</strong> Breadcrumb path (muted, 13px) above Module title (24px, 700)<br>
+    <strong>Right:</strong> Primary CTA button + secondary actions + overflow "···" menu<br>
+    <strong>Below header:</strong> Optional sub-navigation tabs (e.g. Generate / Library / Upscale)</p>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Module</th><th>Primary Content Pattern</th><th>Secondary Panel</th><th>Empty State</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="tx">Dashboard</td>
+          <td>4 stat cards → Quick actions + Recent projects grid → Activity feed timeline</td>
+          <td>None (no right panel)</td>
+          <td>First-time tour prompt</td>
+        </tr>
+        <tr>
+          <td class="tx">Brand Checker</td>
+          <td>Upload zone (full width) → collapses into side-by-side: Image preview + Scores. Below: Radar chart | Report markdown</td>
+          <td>Analysis settings (right panel)</td>
+          <td>Upload prompt with drag-and-drop zone, example images</td>
+        </tr>
+        <tr>
+          <td class="tx">Banner Generator</td>
+          <td>Top: Brief input. Center: Canvas preview. Left drawer: Template gallery. Below: Variation grid</td>
+          <td>Generation params (right panel)</td>
+          <td>Template gallery grid with size presets</td>
+        </tr>
+        <tr>
+          <td class="tx">Image Generator</td>
+          <td>Prompt input top. 4-column masonry grid of results. Selection tray pinned to bottom.</td>
+          <td>AI + style params (right panel)</td>
+          <td>Prompt input with 4 example prompt chips</td>
+        </tr>
+        <tr>
+          <td class="tx">Video Generator</td>
+          <td>Storyboard strip (horizontal scroll) → Video player (16:9, center). Below: Timeline editor</td>
+          <td>Video params (right panel)</td>
+          <td>Scene builder with add-scene prompts</td>
+        </tr>
+        <tr>
+          <td class="tx">Prompt Studio</td>
+          <td>Two-column split: Input editor (left 50%) | Processed output (right 50%). Mode tabs at top.</td>
+          <td>Mode/tone settings (right panel)</td>
+          <td>Mode selector with descriptions + example inputs</td>
+        </tr>
+        <tr>
+          <td class="tx">Asset Library</td>
+          <td>Left: Folder tree (200px). Right: Search + filter bar. Main: Masonry grid. Click item: details side-sheet</td>
+          <td>None (details in side-sheet)</td>
+          <td>Upload CTA + folder creation prompt</td>
+        </tr>
+        <tr>
+          <td class="tx">History</td>
+          <td>Filters bar → Chronological timeline cards with thumbnails, module badge, timestamp</td>
+          <td>None</td>
+          <td>"No activity yet — start generating"</td>
+        </tr>
+        <tr>
+          <td class="tx">Team Workspace</td>
+          <td>Members list (left) + Shared projects grid (right). Permissions inline per member row.</td>
+          <td>None</td>
+          <td>Invite team member prompt</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S6 ──── -->
+<section class="section" id="s6">
+  <div class="section-header">
+    <span class="section-num">6</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Right Panel Structure</h2>
+      <p class="section-desc">Dynamic settings panel — stays visible, changes per active module</p>
+    </div>
+  </div>
+  <div class="card">
+    <h4>Panel Shell (Always Present)</h4>
+    <p><strong>Header:</strong> Module icon + "Settings" label + [←] collapse button. 56px height. Sticky.<br>
+    <strong>Body:</strong> Scrollable section stack. Each section is a collapsible accordion (chevron right, expands/collapses with 250ms ease).<br>
+    <strong>Footer:</strong> Sticky to panel bottom. Contains the primary action button (Generate / Analyze / Process) + token/time estimate.</p>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Module</th><th>Panel Sections (in order)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="tx">Brand Checker</td>
+          <td>AI Model · Check Mode (Full / Quick / Logo Only) · Brand Guideline Version · Score Weights · Report Language · Export Format → [▶ Analyze]</td>
+        </tr>
+        <tr>
+          <td class="tx">Banner Generator</td>
+          <td>AI Model · Prompt (textarea) · Negative Prompt · Canvas Size (preset dropdown + custom) · Brand Mode toggle · Style Presets · Variations count (1–4) · Export Format → [▶ Generate]</td>
+        </tr>
+        <tr>
+          <td class="tx">Image Generator</td>
+          <td>AI Model · Prompt (textarea) · Negative Prompt · Image Size · Aspect Ratio (grid picker) · Quality slider · Creativity slider · Style Presets · Seed (input + randomize) · Reference Image (upload optional) → [▶ Generate]</td>
+        </tr>
+        <tr>
+          <td class="tx">Video Generator</td>
+          <td>AI Model · Prompt (textarea) · Duration (3s/5s/10s/15s) · Frame Rate · Style Presets · Audio toggle · Resolution · Export Format → [▶ Generate]</td>
+        </tr>
+        <tr>
+          <td class="tx">Prompt Studio</td>
+          <td>Mode (Create/Optimize/Translate/Analyze) · Input Language · Output Language · Tone · Template Presets · Advanced Options → [▶ Process]</td>
+        </tr>
+        <tr>
+          <td class="tx">Dashboard / Library / History / Team</td>
+          <td>No right panel. Full width given to workspace. Panel collapses automatically.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Panel Behavior Notes</h4>
+    <p>• Sections collapse individually. User preference is remembered per module.<br>
+    • Every control has a (?) tooltip with one-line explanation on hover.<br>
+    • "Advanced" accordion at the bottom of every module hides less-used options.<br>
+    • Generate button shows estimated time: "~3.2s · 4 images" and is disabled during generation.<br>
+    • Panel width is draggable: min 240px, max 420px, default 320px.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S7 ──── -->
+<section class="section" id="s7">
+  <div class="section-header">
+    <span class="section-num">7</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Layout Grid Specification</h2>
+      <p class="section-desc">Column widths, breakpoints, internal spacing based on 8px grid</p>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>Default</th><th>Min</th><th>Max</th><th>Collapse Behavior</th></tr></thead>
+      <tbody>
+        <tr><td class="tx">Sidebar</td><td><code>240px</code></td><td><code>64px</code></td><td><code>280px</code></td><td>Collapses to icon-only at 1024px</td></tr>
+        <tr><td class="tx">Main Workspace</td><td><code>flex-1</code></td><td><code>480px</code></td><td><code>∞</code></td><td>Always visible, shrinks last</td></tr>
+        <tr><td class="tx">Right Panel</td><td><code>320px</code></td><td><code>240px</code></td><td><code>420px</code></td><td>Slides over workspace at 900px</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Breakpoint</th><th>Label</th><th>Layout</th><th>Sidebar</th><th>Right Panel</th></tr></thead>
+      <tbody>
+        <tr><td><code>≥ 1440px</code></td><td>Wide</td><td>Full 3-column</td><td>240px expanded</td><td>320px visible</td></tr>
+        <tr><td><code>1280–1439px</code></td><td>Desktop</td><td>Full 3-column</td><td>240px expanded</td><td>280px visible</td></tr>
+        <tr><td><code>1024–1279px</code></td><td>Laptop</td><td>3-column (tight)</td><td>64px icon-only</td><td>280px visible</td></tr>
+        <tr><td><code>900–1023px</code></td><td>Small Laptop</td><td>2-column</td><td>64px icon-only</td><td>Overlay on toggle</td></tr>
+        <tr><td><code>768–899px</code></td><td>Tablet</td><td>2-column</td><td>Drawer on hamburger</td><td>Bottom sheet on toggle</td></tr>
+        <tr><td><code>< 768px</code></td><td>Mobile</td><td>Single column</td><td>Bottom tab bar (5 icons)</td><td>Full-screen sheet</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Internal Spacing Scale (8px base)</h4>
+    <div class="space-grid">
+      <div class="space-item"><div class="space-bar" style="height:4px"></div><span class="space-label">4px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:8px"></div><span class="space-label">8px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:12px"></div><span class="space-label">12px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:16px"></div><span class="space-label">16px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:20px"></div><span class="space-label">20px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:24px"></div><span class="space-label">24px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:32px"></div><span class="space-label">32px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:40px"></div><span class="space-label">40px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:48px"></div><span class="space-label">48px</span></div>
+      <div class="space-item"><div class="space-bar" style="height:64px"></div><span class="space-label">64px</span></div>
+    </div>
+    <p style="font-size:13px;color:var(--tx-2)">Use gap on flex/grid containers. Avoid per-element margins. Page padding: 32px h × 24px v. Card padding: 20–24px. Section gap: 24px.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S8 ──── -->
+<section class="section" id="s8">
+  <div class="section-header">
+    <span class="section-num">8</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Design System Specification</h2>
+      <p class="section-desc">Color tokens, typography scale, radii, shadows — both themes</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>Color Palette — Dark Mode (Primary)</h4>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:#070E1E"></div><div class="swatch-name">bg-base</div><div class="swatch-hex">#070E1E</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#0D1829"></div><div class="swatch-name">bg-surface</div><div class="swatch-hex">#0D1829</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#111E30"></div><div class="swatch-name">bg-raised</div><div class="swatch-hex">#111E30</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#1A2840"></div><div class="swatch-name">border</div><div class="swatch-hex">#1A2840</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#4A80FF"></div><div class="swatch-name">primary</div><div class="swatch-hex">#4A80FF</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#00CF6A"></div><div class="swatch-name">accent</div><div class="swatch-hex">#00CF6A</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#E8F0FC"></div><div class="swatch-name">text-primary</div><div class="swatch-hex">#E8F0FC</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#7C9BB5"></div><div class="swatch-name">text-secondary</div><div class="swatch-hex">#7C9BB5</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#3D5572"></div><div class="swatch-name">text-muted</div><div class="swatch-hex">#3D5572</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#EF4444"></div><div class="swatch-name">destructive</div><div class="swatch-hex">#EF4444</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#F59E0B"></div><div class="swatch-name">warning</div><div class="swatch-hex">#F59E0B</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>Color Palette — Light Mode</h4>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:#F8FAFC;border:1px solid #e2e8f0"></div><div class="swatch-name">bg-base</div><div class="swatch-hex">#F8FAFC</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FFFFFF;border:1px solid #e2e8f0"></div><div class="swatch-name">bg-surface</div><div class="swatch-hex">#FFFFFF</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#F1F5F9;border:1px solid #e2e8f0"></div><div class="swatch-name">bg-raised</div><div class="swatch-hex">#F1F5F9</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#E2E8F0"></div><div class="swatch-name">border</div><div class="swatch-hex">#E2E8F0</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#0033C9"></div><div class="swatch-name">primary</div><div class="swatch-hex">#0033C9</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#007A3E"></div><div class="swatch-name">accent</div><div class="swatch-hex">#007A3E</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#0F1B2D"></div><div class="swatch-name">text-primary</div><div class="swatch-hex">#0F1B2D</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#475569"></div><div class="swatch-name">text-secondary</div><div class="swatch-hex">#475569</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#94A3B8"></div><div class="swatch-name">text-muted</div><div class="swatch-hex">#94A3B8</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#DC2626"></div><div class="swatch-name">destructive</div><div class="swatch-hex">#DC2626</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#D97706"></div><div class="swatch-name">warning</div><div class="swatch-hex">#D97706</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>Typography Scale</h4>
+    <div class="type-scale">
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Display</div><div class="type-spec">42px / 700 / –0.04em</div></div>
+        <div class="type-preview" style="font-size:42px;font-weight:700;letter-spacing:-.04em;line-height:1.1">ZaloPay Creative</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Heading 1</div><div class="type-spec">24px / 700 / –0.025em</div></div>
+        <div class="type-preview" style="font-size:24px;font-weight:700;letter-spacing:-.025em">Image Generator</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Heading 2</div><div class="type-spec">18px / 600 / –0.015em</div></div>
+        <div class="type-preview" style="font-size:18px;font-weight:600;letter-spacing:-.015em">Analysis Settings</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Heading 3</div><div class="type-spec">15px / 600 / –0.01em</div></div>
+        <div class="type-preview" style="font-size:15px;font-weight:600;letter-spacing:-.01em">Brand Guideline Version</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Label / Eyebrow</div><div class="type-spec">11px / 600 / +0.07em / UPPER</div></div>
+        <div class="type-preview" style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx-3)">CREATE GROUP</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Body</div><div class="type-spec">14px / 400 / lh 1.65</div></div>
+        <div class="type-preview" style="font-size:14px;line-height:1.65">Analyze your design against the ZaloPay brand guidelines to ensure consistency across all touchpoints.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Body Small</div><div class="type-spec">13px / 400 / lh 1.55</div></div>
+        <div class="type-preview" style="font-size:13px;line-height:1.55;color:var(--tx-2)">Last checked 2 hours ago · 7.2/10 overall score</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Caption / Meta</div><div class="type-spec">12px / 400 / lh 1.4</div></div>
+        <div class="type-preview" style="font-size:12px;line-height:1.4;color:var(--tx-3)">PNG · 1920×1080 · 2.4MB · Modified Jul 24</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-label">Mono / Code</div><div class="type-spec">13px / SFMono / lh 1.55</div></div>
+        <div class="type-preview" style="font-size:13px;font-family:var(--mono);color:var(--blue)">seed: 4829103 · model: flux-1-pro</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>Border Radius</h4>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--tx-2)">
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;background:var(--blue-dim);border-radius:4px;flex-shrink:0"></div> 4px — Badges, tags, small chips</div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;background:var(--blue-dim);border-radius:8px;flex-shrink:0"></div> 8px — Inputs, selects, tooltips</div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;background:var(--blue-dim);border-radius:10px;flex-shrink:0"></div> 10px — Buttons, nav items</div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;background:var(--blue-dim);border-radius:16px;flex-shrink:0"></div> 16px — Cards, panels</div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;background:var(--blue-dim);border-radius:20px;flex-shrink:0"></div> 20px — Modals, drawers</div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;background:var(--blue-dim);border-radius:999px;flex-shrink:0"></div> 999px — Pills, avatars</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>Elevation / Shadows</h4>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="padding:10px 14px;border-radius:8px;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.08);font-size:13px;color:var(--tx-2)">xs — 0 1px 2px · Inline elements, focus rings</div>
+        <div style="padding:10px 14px;border-radius:8px;background:var(--surface);box-shadow:0 2px 4px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);font-size:13px;color:var(--tx-2)">sm — Buttons, inputs on hover</div>
+        <div style="padding:10px 14px;border-radius:8px;background:var(--surface);box-shadow:0 4px 12px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.08);font-size:13px;color:var(--tx-2)">md — Cards, stat boxes</div>
+        <div style="padding:10px 14px;border-radius:8px;background:var(--surface);box-shadow:0 10px 24px rgba(0,0,0,.16),0 4px 8px rgba(0,0,0,.08);font-size:13px;color:var(--tx-2)">lg — Dropdowns, right panel</div>
+        <div style="padding:10px 14px;border-radius:8px;background:var(--surface);box-shadow:0 24px 48px rgba(0,0,0,.24),0 8px 16px rgba(0,0,0,.12);font-size:13px;color:var(--tx-2)">xl — Modals, command palette</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S9 ──── -->
+<section class="section" id="s9">
+  <div class="section-header">
+    <span class="section-num">9</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Component Hierarchy</h2>
+      <p class="section-desc">Full tree from app shell to leaf UI primitives</p>
+    </div>
+  </div>
+  <div class="tree">
+<span class="root">AppShell</span>
+<span class="branch">├── </span><span class="label">Sidebar</span>
+<span class="branch">│   ├── </span><span class="leaf">BrandMark · WorkspaceSwitcher</span>
+<span class="branch">│   ├── </span><span class="leaf">CommandPaletteTrigger</span>
+<span class="branch">│   ├── </span><span class="leaf">FavoritesList → NavItem (pinned)</span>
+<span class="branch">│   ├── </span><span class="leaf">NavGroup [×4]</span>
+<span class="branch">│   │   └── </span><span class="leaf">NavItem → NavSubList → NavSubItem</span>
+<span class="branch">│   └── </span><span class="leaf">SidebarFooter (bell · help · UserProfile)</span>
+<span class="branch">│</span>
+<span class="branch">├── </span><span class="label">MainWorkspace</span>
+<span class="branch">│   ├── </span><span class="leaf">WorkspaceHeader (Breadcrumb · Title · ActionBar · SubNavTabs)</span>
+<span class="branch">│   └── </span><span class="leaf">WorkspaceSlot [dynamic]</span>
+<span class="branch">│       ├── </span><span class="leaf">DashboardView</span>
+<span class="branch">│       │   └── </span><span class="leaf">StatCard · QuickActions · ActivityFeed · RecentGrid</span>
+<span class="branch">│       ├── </span><span class="leaf">BrandCheckerView</span>
+<span class="branch">│       │   └── </span><span class="leaf">DropZone · ScoreCard · RadarChart · ReportPanel</span>
+<span class="branch">│       ├── </span><span class="leaf">ImageGeneratorView</span>
+<span class="branch">│       │   └── </span><span class="leaf">PromptInput · GenerationGrid · SelectionTray</span>
+<span class="branch">│       ├── </span><span class="leaf">BannerGeneratorView</span>
+<span class="branch">│       │   └── </span><span class="leaf">TemplateDrawer · CanvasPreview · VariationGallery</span>
+<span class="branch">│       ├── </span><span class="leaf">VideoGeneratorView</span>
+<span class="branch">│       │   └── </span><span class="leaf">StoryboardStrip · VideoPlayer · TimelineEditor</span>
+<span class="branch">│       ├── </span><span class="leaf">PromptStudioView</span>
+<span class="branch">│       │   └── </span><span class="leaf">PromptEditor · OutputPreview</span>
+<span class="branch">│       ├── </span><span class="leaf">AssetLibraryView</span>
+<span class="branch">│       │   └── </span><span class="leaf">FolderTree · AssetGrid · AssetDetailSheet</span>
+<span class="branch">│       ├── </span><span class="leaf">HistoryView</span>
+<span class="branch">│       │   └── </span><span class="leaf">FilterBar · HistoryTimeline · HistoryCard</span>
+<span class="branch">│       └── </span><span class="leaf">TeamWorkspaceView</span>
+<span class="branch">│           └── </span><span class="leaf">MemberList · SharedProjectsGrid · InviteModal</span>
+<span class="branch">│</span>
+<span class="branch">├── </span><span class="label">RightPanel</span>
+<span class="branch">│   ├── </span><span class="leaf">PanelHeader (title · collapseToggle)</span>
+<span class="branch">│   ├── </span><span class="leaf">PanelSection [×N] → Accordion → [FormControls]</span>
+<span class="branch">│   └── </span><span class="leaf">PanelFooter (GenerateButton · TokenEstimate)</span>
+<span class="branch">│</span>
+<span class="branch">└── </span><span class="label">Shared UI Primitives</span>
+<span class="branch">    ├── </span><span class="leaf">Button (primary · secondary · ghost · destructive / sm·md·lg)</span>
+<span class="branch">    ├── </span><span class="leaf">Input · Textarea · Select · Combobox · Slider · Toggle · Checkbox</span>
+<span class="branch">    ├── </span><span class="leaf">Card (default · elevated · outlined)</span>
+<span class="branch">    ├── </span><span class="leaf">Badge · Tag · Chip</span>
+<span class="branch">    ├── </span><span class="leaf">Avatar · AvatarGroup</span>
+<span class="branch">    ├── </span><span class="leaf">Tooltip · Popover · Dropdown</span>
+<span class="branch">    ├── </span><span class="leaf">Modal · Drawer · Sheet · Toast</span>
+<span class="branch">    ├── </span><span class="leaf">Progress (linear · radial) · Skeleton</span>
+<span class="branch">    ├── </span><span class="leaf">Tabs · Accordion · Divider · Breadcrumb</span>
+<span class="branch">    ├── </span><span class="leaf">DropZone · FilePreview</span>
+<span class="branch">    ├── </span><span class="leaf">EmptyState · ErrorState · LoadingState</span>
+<span class="branch">    └── </span><span class="leaf">CommandPalette (overlay, ⌘K)</span>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S10 ─── -->
+<section class="section" id="s10">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Responsive Strategy</h2>
+      <p class="section-desc">How the 3-column layout adapts across devices without sacrificing function</p>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Breakpoint</th><th>Sidebar</th><th>Main Workspace</th><th>Right Panel</th><th>Key Differences</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>≥ 1280px</code></td>
+          <td>240px expanded</td>
+          <td>Full layout</td>
+          <td>320px always visible</td>
+          <td>Nominal experience</td>
+        </tr>
+        <tr>
+          <td><code>1024–1279px</code></td>
+          <td>64px icon-only</td>
+          <td>Full layout</td>
+          <td>280px always visible</td>
+          <td>Sidebar tooltips active</td>
+        </tr>
+        <tr>
+          <td><code>900–1023px</code></td>
+          <td>64px icon-only</td>
+          <td>Full layout</td>
+          <td>Hidden; toggle button at workspace edge</td>
+          <td>Panel overlays workspace, dims bg</td>
+        </tr>
+        <tr>
+          <td><code>768–899px</code></td>
+          <td>Hidden; hamburger top-left</td>
+          <td>Full width</td>
+          <td>Bottom sheet (drag to reveal)</td>
+          <td>Sidebar becomes full-height drawer</td>
+        </tr>
+        <tr>
+          <td><code>< 768px</code></td>
+          <td>Bottom tab bar (5 primary icons)</td>
+          <td>Single column, simplified</td>
+          <td>Full-screen sheet (tap ⚙ to open)</td>
+          <td>Radar chart → score bar list. Masonry → 2-col grid.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Content Adaptations (Mobile)</h4>
+      <p>
+        <strong>Radar chart:</strong> Replaced with vertical score bar list — more readable at small widths.<br><br>
+        <strong>Image grid:</strong> 4-col → 2-col on tablet → 1-col on mobile.<br><br>
+        <strong>Banner canvas:</strong> Preview only; editing deferred to desktop.<br><br>
+        <strong>Tables:</strong> Each row expands into a card on mobile. Overflow-x: auto on all data tables.<br><br>
+        <strong>History timeline:</strong> Condensed card, less metadata visible, tap to expand.
+      </p>
+    </div>
+    <div class="card">
+      <h4>Touch &amp; Pointer Targets</h4>
+      <p>
+        <strong>Minimum tap target:</strong> 44×44px (WCAG 2.5.5 AAA).<br><br>
+        <strong>Bottom tab bar:</strong> 60px height, icons 28px, spacing ≥ 12px between targets.<br><br>
+        <strong>Slider controls:</strong> Track height increases from 4px to 8px on touch devices.<br><br>
+        <strong>Nav items:</strong> 44px height minimum on all breakpoints.<br><br>
+        <strong>Hover-only interactions</strong> (tooltips, hover previews) each have a tap-to-toggle fallback.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S11 ─── -->
+<section class="section" id="s11">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Interaction Design</h2>
+      <p class="section-desc">Timing, easing, states, and micro-interaction specifications</p>
+    </div>
+  </div>
+
+  <p style="font-size:13px;color:var(--tx-2);margin-bottom:16px">All transitions respect <code>prefers-reduced-motion: reduce</code> — durations drop to 1ms when active.</p>
+
+  <div class="ispec"><div class="ispec-trigger">Sidebar collapse</div><div class="ispec-detail">Width: 240px → 64px. <code>250ms ease-in-out</code>. Label opacity: 1 → 0 at first 80ms. Icon stays pinned to left edge. Tooltips appear <code>200ms</code> after hover on collapsed state.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Module switch</div><div class="ispec-detail">Workspace content: <code>opacity 0→1, translateY 6px→0, 150ms ease-out</code>. Right panel content re-renders instantly then fades in. No full-page transition.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Right panel open</div><div class="ispec-detail">Width: 0 → 320px. <code>200ms ease-in-out</code>. Content fades in after panel is 60% open. On mobile: slides up from bottom <code>280ms cubic-bezier(.32,0,.67,0)</code>.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Generate button</div><div class="ispec-detail">Click → <code>scale(0.97) 80ms</code>. State changes to "Generating…" with spinner. Button disabled. Progress estimate updates in label. On complete: brief <code>scale(1.02)</code> pulse then normalize.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Image grid reveal</div><div class="ispec-detail">Generated images stagger in: each image <code>opacity 0→1, scale 0.96→1, 200ms ease-out</code>, offset by <code>60ms × index</code>. Max 4 staggered — remaining appear together.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Upload drop zone</div><div class="ispec-detail">Drag-over: border color → primary, background → blue-dim, <code>scale(1.01) 100ms</code>. Drop: spinner overlay on preview <code>200ms</code>. Invalid file: border → red, shake animation <code>400ms</code>.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Card hover</div><div class="ispec-detail">Box-shadow elevation: sm → md. <code>100ms ease</code>. No scale. Asset grid cards: overlay buttons appear at <code>opacity 0→1, 120ms</code> on hover.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Accordion section</div><div class="ispec-detail">Chevron rotates 0° → 180°. Content height: <code>max-height 0 → auto</code> via <code>250ms ease-in-out</code>. Use measured pixel height, not `auto`, for smooth animation.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Toast notification</div><div class="ispec-detail">Slides up from bottom-right: <code>translateY(16px)→0, opacity 0→1, 300ms ease-out</code>. Auto-dismisses after 4s. Success: green left border. Error: red. Info: blue.</div></div>
+  <div class="ispec"><div class="ispec-trigger">Command palette</div><div class="ispec-detail">Overlay: <code>opacity 0→1 150ms</code>. Modal: <code>scale(0.97)→1, opacity 0→1, 200ms ease-out</code>. Results filter in real-time as user types, no debounce delay.</div></div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S12 ─── -->
+<section class="section" id="s12">
+  <div class="section-header">
+    <span class="section-num">12</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">UX Recommendations</h2>
+      <p class="section-desc">Opinionated decisions to reduce friction, increase delight, and serve power users</p>
+    </div>
+  </div>
+  <ul class="rec-list">
+    <li><div class="rec-num">1</div><div class="rec-body"><div class="rec-title">Command Palette as primary navigation for power users</div><div class="rec-desc">⌘K opens a global palette: search modules, jump to recent files, trigger any action, see keyboard shortcuts. This is the single most impactful feature for reducing click depth for experienced users. Model it on Linear's command palette.</div></div></li>
+    <li><div class="rec-num">2</div><div class="rec-body"><div class="rec-title">Auto-save everything as drafts</div><div class="rec-desc">Every prompt typed, every upload, every generation is automatically persisted in History. Users never need to manually save. "Draft" badge appears on workspace tab if unsaved changes exist. Eliminates anxiety about losing work.</div></div></li>
+    <li><div class="rec-num">3</div><div class="rec-body"><div class="rec-title">Progressive disclosure in the right panel</div><div class="rec-desc">Show 3–4 most-used controls by default. Everything else lives inside an "Advanced Options" accordion, collapsed by default. This keeps the panel scannable for new users while giving experts full control.</div></div></li>
+    <li><div class="rec-num">4</div><div class="rec-body"><div class="rec-title">Rich empty states with specific quick-start actions</div><div class="rec-desc">Every module's empty state should show 3 suggested starting actions (not just an illustration). For Image Generator: "Try: ZaloPay user on phone" · "Try: Tết campaign banner" · "Try: product on white background". Remove all friction from first use.</div></div></li>
+    <li><div class="rec-num">5</div><div class="rec-body"><div class="rec-title">Real-time token and time estimate before generating</div><div class="rec-desc">The Generate button label should show "~3.2s · 4 images" computed from current settings. Users understand what they're requesting before committing. Prevent surprise on slow generations.</div></div></li>
+    <li><div class="rec-num">6</div><div class="rec-body"><div class="rec-title">Score delta on Brand Checker re-runs</div><div class="rec-desc">When a user re-checks an updated design, show the score change: "Logo +1.5 ↑ · Color −0.5 ↓". Makes iteration feel rewarding and shows which changes had impact.</div></div></li>
+    <li><div class="rec-num">7</div><div class="rec-body"><div class="rec-title">Pin frequently used modules to Favorites</div><div class="rec-desc">Right-click (or long-press) any sidebar item to pin it to the Favorites section. Drag to reorder. Saves repetitive navigation for users who live in 1–2 modules daily.</div></div></li>
+    <li><div class="rec-num">8</div><div class="rec-body"><div class="rec-title">Inline contextual help on every control</div><div class="rec-desc">Every right-panel setting has a (?) icon. Hover shows a tooltip explaining the setting in one plain sentence. No need to open documentation. Dramatically reduces support load for new users.</div></div></li>
+    <li><div class="rec-num">9</div><div class="rec-body"><div class="rec-title">Batch operations in Asset Library and History</div><div class="rec-desc">Multi-select with Shift+click or checkbox toggle. Batch download, delete, move to folder, or re-run analysis. Critical for team users managing large asset volumes.</div></div></li>
+    <li><div class="rec-num">10</div><div class="rec-body"><div class="rec-title">Seed locking for reproducible generations</div><div class="rec-desc">In Image and Banner generators, show the seed used for each output. Let users lock a seed with one click to iterate on a composition while changing other params. Mirrors Midjourney's power-user workflow.</div></div></li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────────────────────────── S13 ─── -->
+<section class="section" id="s13">
+  <div class="section-header">
+    <span class="section-num">13</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Future Expansion Strategy</h2>
+      <p class="section-desc">How the architecture scales to 30+ modules without redesigning navigation</p>
+    </div>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Module Registry Pattern</h4>
+      <p>Each module is one config object in a registry:</p>
+      <pre style="font-family:var(--mono);font-size:12px;color:var(--blue);background:var(--raised);padding:12px;border-radius:8px;margin-top:10px;overflow-x:auto;line-height:1.6">{
+  id: "image-gen",
+  label: "Image Generator",
+  icon: Sparkles,
+  group: "CREATE",
+  beta: false,
+  workspace: ImageGeneratorView,
+  rightPanel: ImageGenPanel,
+  subNav: ["Generate","Library","Upscale"]
+}</pre>
+      <p style="margin-top:10px">Adding a new module = adding one object. Zero structural changes to nav, layout, or routing.</p>
+    </div>
+    <div class="card">
+      <h4>Navigation Scaling</h4>
+      <p><strong>10 modules (current):</strong> Full labels always visible. No search needed.<br><br>
+      <strong>15–20 modules:</strong> Groups become collapsible. Search trigger gets more prominent.<br><br>
+      <strong>20–30 modules:</strong> New sub-groups appear inside CREATE/MANAGE. Command palette becomes the primary discovery surface. Sidebar defaults to Favorites + Recent only.<br><br>
+      <strong>30+ modules:</strong> Module catalog page replaces exhaustive sidebar listing. Sidebar shows only pinned + recent.</p>
+    </div>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Feature Flag System</h4>
+      <p>New modules ship with <code>beta: true</code> — shown with a "Beta" badge in the sidebar. Toggle per workspace in Settings. Allows gradual rollout without disrupting production users. When stable, flip flag to remove badge.</p>
+    </div>
+    <div class="card">
+      <h4>Right Panel Plugin Architecture</h4>
+      <p>Each module registers its own right-panel sections. The panel shell never changes — it renders whatever sections the active module declares. New AI capabilities can add controls without touching the panel component.</p>
+    </div>
+  </div>
+  <div class="card">
+    <h4>Planned Phase Modules (post-v1)</h4>
+    <div class="tbl-wrap" style="margin:0">
+      <table>
+        <thead><tr><th>Phase</th><th>Module</th><th>Group</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td class="tx">Social Post Generator</td><td>CREATE</td><td>Multi-format: FB, IG, Zalo</td></tr>
+          <tr><td>2</td><td class="tx">Email Banner Builder</td><td>CREATE</td><td>Drag-and-drop email template</td></tr>
+          <tr><td>2</td><td class="tx">QR Code Generator</td><td>CREATE</td><td>Branded QR with ZaloPay style</td></tr>
+          <tr><td>3</td><td class="tx">AI Copywriter</td><td>CREATE</td><td>Campaign copy in VI/EN</td></tr>
+          <tr><td>3</td><td class="tx">Brand Health Monitor</td><td>MANAGE</td><td>Batch check across campaigns</td></tr>
+          <tr><td>3</td><td class="tx">Analytics Dashboard</td><td>MANAGE</td><td>Usage, generation stats, compliance trends</td></tr>
+          <tr><td>4</td><td class="tx">3D Asset Generator</td><td>CREATE</td><td>Beta, high compute</td></tr>
+          <tr><td>4</td><td class="tx">Presentation Builder</td><td>CREATE</td><td>ZaloPay-branded slide decks</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── S14 ─── -->
+<section class="section" id="s14">
+  <div class="section-header">
+    <span class="section-num">14</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">Improvements vs Current Website</h2>
+      <p class="section-desc">Specific gaps in the existing product, and how the new architecture addresses each</p>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table class="compare">
+      <thead><tr><th>#</th><th>Area</th><th class="before">Current State</th><th class="after">Proposed Solution</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="tx">Navigation</td><td class="before">Single tool, no navigation between modules</td><td class="after">Persistent sidebar with 10 modules, expandable to 30+</td></tr>
+        <tr><td>2</td><td class="tx">Discovery</td><td class="before">No way to find or switch tools</td><td class="after">Command palette (⌘K) + sidebar + breadcrumb</td></tr>
+        <tr><td>3</td><td class="tx">User Context</td><td class="before">No user/team concept</td><td class="after">User profile, team workspace, roles, sharing</td></tr>
+        <tr><td>4</td><td class="tx">Persistence</td><td class="before">Work lost on refresh; no history</td><td class="after">Auto-save drafts + full History module with timeline</td></tr>
+        <tr><td>5</td><td class="tx">Asset Management</td><td class="before">No asset storage or reuse</td><td class="after">Asset Library with folders, search, and Brand Kit</td></tr>
+        <tr><td>6</td><td class="tx">Idle Dashboard</td><td class="before">Stats grid shows zeros when idle — creates confusion</td><td class="after">Dashboard removed from brand-checker view; stats shown in dedicated Dashboard module with real context</td></tr>
+        <tr><td>7</td><td class="tx">Export</td><td class="before">Limited to PDF/PNG from report panel</td><td class="after">Per-module export settings in right panel: format, quality, multi-size, batch</td></tr>
+        <tr><td>8</td><td class="tx">Prompt Assistance</td><td class="before">No prompt help; users write from scratch</td><td class="after">Prompt Studio module + example chips on every generator + prompt optimization</td></tr>
+        <tr><td>9</td><td class="tx">Right Panel</td><td class="before">Right side of screen unused</td><td class="after">Dynamic settings panel — core to every create module, always reachable</td></tr>
+        <tr><td>10</td><td class="tx">Empty States</td><td class="before">Upload zone with no guidance</td><td class="after">Rich empty states with 3 specific quick-start actions per module</td></tr>
+        <tr><td>11</td><td class="tx">Onboarding</td><td class="before">No onboarding flow</td><td class="after">First-visit tour on Dashboard; contextual tooltips on every control</td></tr>
+        <tr><td>12</td><td class="tx">Multi-brand</td><td class="before">Single hardcoded brand guideline</td><td class="after">Brand Configuration in Settings; per-workspace brand selection; multi-brand support</td></tr>
+        <tr><td>13</td><td class="tx">Mobile</td><td class="before">Layout breaks on small screens</td><td class="after">Full responsive strategy with bottom tab bar, bottom sheets, simplified views</td></tr>
+        <tr><td>14</td><td class="tx">Score Iteration</td><td class="before">No comparison between check runs</td><td class="after">Score delta display on re-check: +1.5 / −0.5 per category</td></tr>
+        <tr><td>15</td><td class="tx">Theme</td><td class="before">Light/dark toggle exists but design feels inconsistent</td><td class="after">Fully spec'd dual-theme design system with consistent token usage throughout</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────── WIREFRAMES ── -->
+<section class="section" id="wireframes">
+  <div class="section-header">
+    <span class="section-num" style="background:var(--green-dim);color:var(--green)">↓</span>
+    <div class="section-title-wrap">
+      <h2 class="section-title">ASCII Wireframes</h2>
+      <p class="section-desc">Annotated layout diagrams for the primary views</p>
+    </div>
+  </div>
+
+  <div class="ascii">
+    <div class="ascii-label">Wireframe A — Full 3-Column Layout · 1440px · Brand Checker Active</div>
+    <pre>
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ← SIDEBAR 240px →  │ ←───────────────── MAIN WORKSPACE (flex-1) ─────────────────────→ │← PANEL 320px→│
+├────────────────────┼──────────────────────────────────────────────────────────────────┼────────────────┤
+│ ⚡ ZaloPay         │ ⌂ / Brand Guideline Checker               [+ New Check][···]     │ ⚙ Settings [←]│
+│    Creative        │──────────────────────────────────────────────────────────────────│────────────────│
+│    Platform      ▾ │                                                                  │ AI Model       │
+├────────────────────│ Brand Guideline Checker                                          │ ┌────────────┐ │
+│ ⌘  Search...       │ Analyze your designs against ZaloPay brand guidelines            │ │Gemini Pro▾ │ │
+├────────────────────│                                                                  │ └────────────┘ │
+│ ★ FAVORITES        │ ┌────────────────────────────────────────────────────────────┐  │                │
+│   🎨 Checker  ─────│ │                                                            │  │ Check Mode     │
+├────────────────────│ │         ↑  Drop your design here                          │  │ ● Full         │
+│   OVERVIEW         │ │            or  [ Browse Files ]                           │  │ ○ Quick        │
+│ 🏠 Dashboard       │ │         PNG · JPG · WebP · SVG  ·  Max 10 MB             │  │ ○ Logo Only    │
+├────────────────────│ └────────────────────────────────────────────────────────────┘  │                │
+│   CREATE           │                                                                  │ Brand Version  │
+│ 🎨 Brand Check  ●  │ ┌────────────────────────────────────────────────────────────┐  │ ┌────────────┐ │
+│ 🖼 Banner Gen      │ │ 📊 RESULTS                                  Score: 7.2/10 │  │ │ZaloPay 2025│ │
+│ ✨ Image Gen       │ │ ────────────────────────────────────────────────────────── │  │ └────────────┘ │
+│ 🎥 Video Gen       │ │ Logo Compliance    ████████████░░  9.0   ✅              │  │                │
+│ ✍  Prompt Studio   │ │ Color Usage        ██████████░░░░  8.0   ✅              │  │ Score Weights  │
+├────────────────────│ │ Typography         ███████░░░░░░░  7.0   ⚠️             │  │ [≡ Customize]  │
+│   MANAGE           │ │ Trademark          █████░░░░░░░░░  5.0   ❌             │  │                │
+│ 📦 Asset Library  3│ │ Layout & Comp      ████████░░░░░░  6.5   ⚠️             │  │ Language       │
+│ 📚 History         │ │ CTA Clarity        ████████████░░  8.5   ✅              │  │ ┌────────────┐ │
+│ 👥 Team            │ └────────────────────────────────────────────────────────────┘  │ │Tiếng Việt▾ │ │
+├────────────────────│                                                                  │ └────────────┘ │
+│ ⚙  Settings        │ ┌───────────────────────┐  ┌─────────────────────────────────┐ │                │
+├────────────────────│ │ 🕸 Radar Chart        │  │ 📄 Improvement Report           │ │ Export         │
+│ 🔔  ?              │ │                       │  │                                 │ │ ┌────────────┐ │
+│ 👤 Nguyen Ngọc     │ │  [spider chart svg]   │  │ ### Điểm cần cải thiện          │ │ │ PDF + JSON │ │
+│ Free · Upgrade →   │ │                       │  │ - Thương hiệu chưa xuất hiện   │ │ └────────────┘ │
+└────────────────────│ └───────────────────────┘  │ - Typography sai font          │ │────────────────│
+                     │                             │ [Copy][Download][Share]        │ │[▶  ANALYZE  ]  │
+                     │                             └─────────────────────────────────┘ │ est. ~4.2s     │
+                     └──────────────────────────────────────────────────────────────┘  └────────────────┘
+    </pre>
+  </div>
+
+  <div class="ascii">
+    <div class="ascii-label">Wireframe B — Image Generator · Results State</div>
+    <pre>
+├────────────────────┼──────────────────────────────────────────────────────────────────┼────────────────┤
+│                    │ ⌂ / Image Generator               [History][Batch][···]          │ ⚙ Settings [←]│
+│                    │──────────────────────────────────────────────────────────────────│────────────────│
+│                    │ [Generate] [My Library] [Upscale]                                │ AI Model       │
+│                    │                                                                  │ [Flux.1 Pro ▾] │
+│                    │ ┌────────────────────────────────────────────────────────────┐  │                │
+│                    │ │ woman using zalopay app in a modern coffee shop,            │  │ Prompt         │
+│                    │ │ photorealistic, soft morning light, shallow DOF         ↺  │  │ ┌────────────┐ │
+│                    │ └────────────────────────────────────────────────────────────┘  │ │ woman using│ │
+│                    │ Examples: [ZaloPay UI]  [Tết campaign]  [Product shot]          │ │ zalopay app│ │
+│                    │                                                                  │ │ in coffee..│ │
+│                    │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │ └────────────┘ │
+│                    │ │          │ │          │ │          │ │          │           │                │
+│                    │ │ [img 1]  │ │ [img 2]  │ │ [img 3]  │ │ [img 4]  │           │ Negative Prompt│
+│                    │ │          │ │  ★       │ │          │ │          │           │ [blurry, bad..]│
+│                    │ │ ★ ↗ ⬇   │ │ ↗ ⬇     │ │ ★ ↗ ⬇   │ │ ★ ↗ ⬇   │           │                │
+│                    │ └──────────┘ └──────────┘ └──────────┘ └──────────┘           │ Size           │
+│                    │                                                                  │ [1024×1024 ▾]  │
+│                    │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │                │
+│                    │ │ [img 5]  │ │ [img 6]  │ │ [img 7]  │ │ [img 8]  │           │ Aspect Ratio   │
+│                    │ │          │ │          │ │          │ │          │           │ [■1:1][□4:3]   │
+│                    │ │ ★ ↗ ⬇   │ │ ★ ↗ ⬇   │ │ ★ ↗ ⬇   │ │ ★ ↗ ⬇   │           │ [□16:9][□9:16] │
+│                    │ └──────────┘ └──────────┘ └──────────┘ └──────────┘           │                │
+│                    │                                                                  │ Quality ●●●●○  │
+│                    │ ─── SELECTED (3) ────────────────── [Save to Library][Export]  │ Creativity ●●●○│
+│                    │ [thumb1]  [thumb2]  [thumb3]    Upscale selected →              │ Style [Photo▾] │
+│                    │                                                                  │ Seed [4829103] │
+│                    │                                                                  │────────────────│
+│                    │                                                                  │[▶  GENERATE  ] │
+│                    │                                                                  │ ~3.2s · 4 imgs │
+    </pre>
+  </div>
+
+  <div class="ascii">
+    <div class="ascii-label">Wireframe C — Sidebar · Expanded vs Collapsed States</div>
+    <pre>
+EXPANDED (240px)                    COLLAPSED (64px)
+┌──────────────────────────┐        ┌────────┐
+│ ⚡ ZaloPay Creative    ▾ │        │  ⚡  ▾ │
+├──────────────────────────┤        ├────────┤
+│ ⌘  Search modules...     │        │   ⌘   │
+├──────────────────────────┤        ├────────┤
+│  ★  FAVORITES            │        │  ─    │
+│     🎨 Brand Checker     │        │  🎨   │ ← tooltip "Brand Checker"
+├──────────────────────────┤        ├────────┤
+│     OVERVIEW             │        │  ─    │
+│  🏠 Dashboard            │        │  🏠   │
+├──────────────────────────┤        ├────────┤
+│     CREATE               │        │  ─    │
+│  🎨 Brand Checker  ●     │← ACTIVE│  🎨 ● │ ← 3px blue left border
+│  🖼 Banner Generator     │        │  🖼   │
+│  ✨ Image Generator      │        │  ✨   │
+│  🎥 Video Generator      │        │  🎥   │
+│  ✍  Prompt Studio        │        │  ✍    │
+├──────────────────────────┤        ├────────┤
+│     MANAGE               │        │  ─    │
+│  📦 Asset Library    [3] │← badge │  📦³  │ ← count on icon
+│  📚 History              │        │  📚   │
+│  👥 Team Workspace       │        │  👥   │
+├──────────────────────────┤        ├────────┤
+│  ⚙  Settings             │        │  ⚙    │
+├──────────────────────────┤        ├────────┤
+│  🔔  [?]         [←] col.│        │  🔔   │
+│  👤 Nguyen Ngọc          │        │  👤   │
+│  Free Plan  ·  Upgrade → │        │       │
+└──────────────────────────┘        └────────┘
+    </pre>
+  </div>
+
+  <div class="ascii">
+    <div class="ascii-label">Wireframe D — Dashboard View · No Right Panel</div>
+    <pre>
+├────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤
+│                    │ Dashboard                                                        [+ New Project]  │
+│                    │ Good morning, Ngọc — here's your creative overview.                              │
+│                    │──────────────────────────────────────────────────────────────────────────────────│
+│                    │                                                                                   │
+│                    │ ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
+│                    │ │ 🖼 Images    │  │ 🎨 Checks    │  │ 📦 Storage   │  │ ⚡ Today     │         │
+│                    │ │    142       │  │    38        │  │  1.2 GB      │  │  5 tasks     │         │
+│                    │ │ +12 this wk  │  │ +4 this wk   │  │ 78% of 2 GB  │  │ 2 pending    │         │
+│                    │ └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘         │
+│                    │                                                                                   │
+│                    │ ┌──────────────────────────────────────┐  ┌────────────────────────────────────┐│
+│                    │ │ Quick Start                          │  │ Recent Projects                    ││
+│                    │ │                                      │  │                                    ││
+│                    │ │  [🎨 Check a Design]                 │  │ · Banner Tết 2026        2h ago    ││
+│                    │ │  [✨ Generate Image]                 │  │ · Logo Check v3          4h ago    ││
+│                    │ │  [🖼 Create Banner]                  │  │ · ZLP Campaign Images    Yesterday ││
+│                    │ │  [✍  Write a Prompt]                 │  │ · Q3 Social Pack         2d ago    ││
+│                    │ │                                      │  │                [View all →]        ││
+│                    │ └──────────────────────────────────────┘  └────────────────────────────────────┘│
+│                    │                                                                                   │
+│                    │ ┌──────────────────────────────────────────────────────────────────────────────┐ │
+│                    │ │ Activity Feed                                           [Last 7 days ▾]       │ │
+│                    │ │ ──────────────────────────────────────────────────────────────────────────── │ │
+│                    │ │ ✅  Brand check passed    ·  Banner Tết 2026 v2         ·  2 hours ago        │ │
+│                    │ │ ⚠️   Brand check issues   ·  Homepage Hero Jul          ·  4 hours ago        │ │
+│                    │ │ 🖼  Generated 8 images    ·  ZLP Campaign brief         ·  Yesterday 14:22    │ │
+│                    │ │ 📦  Uploaded 12 assets    ·  Q3 Brand Kit               ·  2 days ago         │ │
+│                    │ └──────────────────────────────────────────────────────────────────────────────┘ │
+    </pre>
+  </div>
+
+  <div class="ascii">
+    <div class="ascii-label">Wireframe E — Mobile Layout · 375px · Brand Checker</div>
+    <pre>
+┌─────────────────────────────────────┐
+│ ☰   Brand Checker            ⚙      │  ← hamburger → drawer; ⚙ opens panel sheet
+├─────────────────────────────────────┤
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │  ↑  Drop your design here       │ │
+│ │     or  [ Browse Files ]        │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ ── RESULTS ──────────────  7.2/10 ──│
+│                                     │
+│ Logo      ████████████░░  9.0  ✅   │
+│ Color     ██████████░░░░  8.0  ✅   │
+│ Typography ███████░░░░░░  7.0  ⚠️   │
+│ Trademark  █████░░░░░░░░  5.0  ❌   │
+│ Layout     ████████░░░░░  6.5  ⚠️   │
+│ CTA        ████████████░  8.5  ✅   │
+│                                     │
+│ ── REPORT ───────────────────────── │
+│ Trademark chưa xuất hiện trong...  │
+│ Typography không đúng Aeonik Pro... │
+│                        [Read more] │
+│                                     │
+│ [Copy Report]  [Download PDF]       │
+│                                     │
+├─────────────────────────────────────┤
+│  🏠      🎨      ✨      📦      ⋯  │  ← bottom tab bar
+└─────────────────────────────────────┘
+    </pre>
+  </div>
+
+</section>
+
+<!-- FOOTER -->
+<footer class="doc-footer">
+  <div class="doc-footer-note">
+    Sprint 2 · ZaloPay Creative Platform · Design Architecture<br>
+    <span style="color:var(--tx-3)">Prepared for review — awaiting Sprint 3 approval</span>
+  </div>
+  <div class="approval-box">
+    <strong>⏳ Awaiting Your Approval</strong>
+    This document covers all 14 deliverables for Sprint 2. Please review and approve before Sprint 3 begins. Sprint 3 will implement this architecture in Next.js 15 + TypeScript.
+  </div>
+</footer>
+
+</div>
+
+<script>
+function toggleTheme(){
+  const r=document.documentElement;
+  const cur=r.getAttribute('data-theme');
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  if(!cur){r.setAttribute('data-theme',dark?'light':'dark')}
+  else if(cur==='dark'){r.setAttribute('data-theme','light')}
+  else{r.removeAttribute('data-theme')}
+}
+</script>
+</body>
