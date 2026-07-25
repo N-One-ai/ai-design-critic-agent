@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
-  Target, Sparkles, Image, Video, Archive, FolderOpen, Film,
+  Target, Sparkles, Image, Archive, FolderOpen, Film,
   Star, ArrowRight, Plus, Zap, Bell, Rocket,
   ChevronRight, ChevronLeft, CheckCircle2, TrendingUp,
 } from "lucide-react";
@@ -420,13 +420,6 @@ const FEATURE_CARDS: FeatureCardData[] = [
    DATA
 ═══════════════════════════════════════════════════════ */
 
-const QUICK_ACTIONS = [
-  { id: "banner-generator", Icon: Image,    label: "Generate Banner",  desc: "Tạo banner quảng cáo",     href: "/banner-generator",  gradient: "linear-gradient(135deg, #0033c9, #2f6bff)" },
-  { id: "image-generator",  Icon: Sparkles, label: "Generate Image",   desc: "Sinh ảnh AI sáng tạo",     href: "/image-generator",   gradient: "linear-gradient(135deg, #00894a, #00cf6a)" },
-  { id: "brand-checker",    Icon: Target,   label: "Analyze Design",   desc: "Kiểm tra brand guideline", href: "/brand-checker",     gradient: "linear-gradient(135deg, #003060, #0055cc)" },
-  { id: "video-generator",  Icon: Video,    label: "Generate Video",   desc: "Tạo video marketing",      href: "/video-generator",   gradient: "linear-gradient(135deg, #1a0a5c, #0033c9)" },
-];
-
 const PLATFORM_STATS = [
   { id: "projects",  label: "Projects",         value: "24",    icon: FolderOpen, color: "#2f6bff" },
   { id: "assets",    label: "Assets",           value: "1,482", icon: Archive,    color: "#00cf6a" },
@@ -594,27 +587,6 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 3. Quick Actions ── */}
-      <section>
-        <p className="type-label text-[var(--fg-subtle)] mb-4">Tạo nội dung mới</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {QUICK_ACTIONS.map(({ id, Icon, label, desc, href, gradient }) => (
-            <Link key={id} href={href}>
-              <div className="flex items-center gap-3 px-4 py-3.5 rounded-[var(--radius-xl)] border border-[var(--border-default)] bg-[var(--bg-surface-1)] hover:border-[var(--brand-default)] hover:bg-[var(--bg-surface-2)] hover:shadow-[var(--shadow-2)] transition-all cursor-pointer group">
-                <div className="w-9 h-9 rounded-[var(--radius-lg)] flex items-center justify-center shrink-0" style={{ background: gradient }}>
-                  <Icon size={16} className="text-white" strokeWidth={1.8} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-[var(--fg-default)] leading-none">{label}</p>
-                  <p className="text-[11.5px] text-[var(--fg-muted)] mt-1 truncate">{desc}</p>
-                </div>
-                <ArrowRight size={14} className="text-[var(--fg-subtle)] group-hover:text-[var(--brand-default)] transition-colors shrink-0" />
-              </div>
-            </Link>
           ))}
         </div>
       </section>
