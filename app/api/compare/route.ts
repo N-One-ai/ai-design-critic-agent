@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
-import { compareDesigns } from "@/lib/llm-client";
+import { compareDesigns, QuotaExceededError } from "@/lib/llm-client";
 import { renderCompareReport } from "@/lib/report";
 
 export const runtime = "nodejs";
@@ -95,8 +95,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...comparison, report });
   } catch (err) {
     console.error("Comparison failed:", err);
+
+    if (err instanceof QuotaExceededError) {
+      return NextResponse.json(
+        {
+          error: "Đã vượt quá giới hạn API Gemini. Vui lòng thử lại sau vài phút.",
+          errorCode: "QUOTA_EXCEEDED",
+        },
+        { status: 429 }
+      );
+    }
+
+    const msg = (err as Error).message ?? "";
+    if (msg.includes("429") || msg.includes("quota") || msg.includes("Too Many Requests")) {
+      return NextResponse.json(
+        {
+          error: "Đã vượt quá giới hạn API Gemini. Vui lòng thử lại sau vài phút.",
+          errorCode: "QUOTA_EXCEEDED",
+        },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
-      { error: (err as Error).message },
+      { error: "So sánh thất bại. Vui lòng thử lại." },
       { status: 500 }
     );
   }

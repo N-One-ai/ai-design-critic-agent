@@ -217,6 +217,43 @@ function convertMessagesForGemini(messages: GeminiMessage[]) {
   return { systemInstruction: systemMsg?.content as string | undefined, contents };
 }
 
+export class QuotaExceededError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "QuotaExceededError";
+  }
+}
+
+function isQuotaError(err: unknown): boolean {
+  const msg = String((err as Error)?.message ?? "");
+  return (
+    msg.includes("429") ||
+    msg.includes("quota") ||
+    msg.includes("Too Many Requests") ||
+    msg.includes("RESOURCE_EXHAUSTED")
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callModelOnce(
+  genAI: GoogleGenerativeAI,
+  modelName: string,
+  systemInstruction: string | undefined,
+  contents: import("@google/generative-ai").Content[]
+): Promise<string> {
+  const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+  const result = await model.generateContent({
+    contents,
+    generationConfig: { maxOutputTokens: 8192 },
+  });
+  const text = result.response.text();
+  if (!text) throw new Error("LLM response did not contain any content");
+  return text;
+}
+
 async function callLlm(
   messages: GeminiMessage[],
   parseOptions: ParseOptions
@@ -226,25 +263,46 @@ async function callLlm(
   }
 
   const { systemInstruction, contents } = convertMessagesForGemini(messages);
-
   const genAI = new GoogleGenerativeAI(config.llm.apiKey);
-  const model = genAI.getGenerativeModel({
-    model: config.llm.model,
-    systemInstruction,
-  });
 
-  const geminiResult = await model.generateContent({
-    contents,
-    generationConfig: { maxOutputTokens: 8192 },
-  });
+  const models = [config.llm.model, ...config.llm.fallbackModels];
 
-  const content = geminiResult.response.text();
-  if (!content) {
-    throw new Error("LLM response did not contain any content");
+  for (let mi = 0; mi < models.length; mi++) {
+    const modelName = models[mi];
+    // Retry the primary model twice before falling back; fallbacks get one attempt each
+    const maxRetries = mi === 0 ? 2 : 1;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const text = await callModelOnce(genAI, modelName, systemInstruction, contents);
+        const { data: result } = safeParseLlmResponse(text, parseOptions);
+        return result;
+      } catch (err) {
+        if (!isQuotaError(err)) {
+          throw err; // Non-quota errors propagate immediately
+        }
+
+        const isLastAttempt = attempt === maxRetries;
+        const isLastModel = mi === models.length - 1;
+
+        if (isLastAttempt && isLastModel) break; // fall through to QuotaExceededError below
+
+        if (isLastAttempt) {
+          console.warn(`[llm] Model "${modelName}" quota exceeded — trying fallback.`);
+          break; // move to next model
+        }
+
+        // Wait before retrying the same model: 1s → 2s
+        const delay = 1000 * Math.pow(2, attempt - 1);
+        console.warn(`[llm] 429 from "${modelName}", retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+        await sleep(delay);
+      }
+    }
   }
 
-  const { data: result } = safeParseLlmResponse(content, parseOptions);
-  return result;
+  throw new QuotaExceededError(
+    "Đã vượt quá giới hạn API Gemini. Vui lòng thử lại sau vài phút."
+  );
 }
 
 interface AnalyzeParams {
