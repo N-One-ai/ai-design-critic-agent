@@ -15,7 +15,6 @@ export default function PromptStudioPage() {
         "Prompt analytics",
         "Auto-suggest variables",
       ]}
-      accentColor="#06b6d4"
     />
   );
 }

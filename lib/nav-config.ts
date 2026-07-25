@@ -11,6 +11,7 @@ import {
   Star,
   Users,
   Settings,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 
@@ -131,6 +132,14 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     items: [
+      {
+        id: "design-system",
+        label: "Design System",
+        href: "/design-system",
+        Icon: Layers,
+        badge: "new",
+        description: "Component library & tokens",
+      },
       {
         id: "settings",
         label: "Settings",

@@ -15,7 +15,6 @@ export default function VideoGeneratorPage() {
         "Xuất MP4 & GIF",
         "Social media formats",
       ]}
-      accentColor="#8b5cf6"
     />
   );
 }

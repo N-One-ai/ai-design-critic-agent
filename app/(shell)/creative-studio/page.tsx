@@ -15,7 +15,6 @@ export default function CreativeStudioPage() {
         "Real-time collaboration",
         "Export đa định dạng",
       ]}
-      accentColor="#ec4899"
     />
   );
 }

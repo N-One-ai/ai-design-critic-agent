@@ -15,7 +15,6 @@ export default function ImageGeneratorPage() {
         "Upscale tới 4K",
         "Lịch sử sinh ảnh",
       ]}
-      accentColor="#f59e0b"
     />
   );
 }

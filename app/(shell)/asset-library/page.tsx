@@ -15,7 +15,6 @@ export default function AssetLibraryPage() {
         "Download formats",
         "Team permissions",
       ]}
-      accentColor="#10b981"
     />
   );
 }

@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import { Upload, ImageIcon, RefreshCw } from "lucide-react";
+import { RefreshCw, ImageIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { ReportPanel } from "@/components/report-panel";
+import { UploadArea } from "@/components/ui/upload-area";
+import { Alert } from "@/components/ui/alert";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { ScoreBar, ProgressCircle } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
 import type { AnalysisResult, AnalysisStatus } from "@/lib/types";
 
 const RadarChartComponent = dynamic(
@@ -22,91 +27,6 @@ interface WorkspaceProps {
   onFileSelect: (file: File) => void;
 }
 
-function UploadZone({
-  onFileSelect,
-}: {
-  onFileSelect: (file: File) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const zoneRef = useRef<HTMLDivElement>(null);
-
-  const handleFile = useCallback(
-    (file: File) => {
-      if (!file.type.startsWith("image/")) {
-        alert("Vui lòng chọn một tệp hình ảnh.");
-        return;
-      }
-      onFileSelect(file);
-    },
-    [onFileSelect]
-  );
-
-  return (
-    <div
-      ref={zoneRef}
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(e) => {
-        e.preventDefault();
-        zoneRef.current?.setAttribute("data-drag", "true");
-      }}
-      onDragLeave={() => zoneRef.current?.removeAttribute("data-drag")}
-      onDrop={(e) => {
-        e.preventDefault();
-        zoneRef.current?.removeAttribute("data-drag");
-        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-      }}
-      className="
-        group flex flex-col items-center justify-center gap-4
-        border-2 border-dashed border-[var(--border)] rounded-2xl
-        p-16 cursor-pointer
-        transition-all duration-200
-        hover:border-[var(--primary)] hover:bg-[var(--primary-subtle)]
-        data-[drag]:border-[var(--primary)] data-[drag]:bg-[var(--primary-subtle)]
-      "
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
-    >
-      <div className="w-14 h-14 rounded-2xl bg-[var(--surface-secondary)] group-hover:bg-[var(--primary-subtle)] flex items-center justify-center transition-colors">
-        <Upload size={24} strokeWidth={1.5} className="text-[var(--foreground-3)] group-hover:text-[var(--primary)]" />
-      </div>
-      <div className="text-center">
-        <p className="text-[15px] font-semibold text-[var(--foreground)] mb-1">
-          Tải lên thiết kế của bạn
-        </p>
-        <p className="text-[13px] text-[var(--foreground-3)]">
-          Nhấn hoặc kéo & thả · PNG, JPG, WEBP
-        </p>
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => e.target.files?.length && handleFile(e.target.files[0])}
-      />
-    </div>
-  );
-}
-
-function ScoreBar({ score }: { score: number }) {
-  const pct = (score / 10) * 100;
-  const color = score >= 7 ? "var(--accent)" : score >= 5 ? "#f59e0b" : "#ef4444";
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-2 bg-[var(--surface-secondary)] rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${pct}%`, background: color }}
-        />
-      </div>
-      <span className="text-[13px] font-bold tabular-nums" style={{ color }}>
-        {score}/10
-      </span>
-    </div>
-  );
-}
-
 export function BrandCheckerWorkspace({
   selectedFile,
   previewUrl,
@@ -117,104 +37,118 @@ export function BrandCheckerWorkspace({
   isLoading,
   onFileSelect,
 }: WorkspaceProps) {
+  const handleReplaceFile = () => {
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "image/*";
+    inp.onchange = (e) => {
+      const f = (e.target as HTMLInputElement).files?.[0];
+      if (f) onFileSelect(f);
+    };
+    inp.click();
+  };
+
   return (
-    <div className="p-6 max-w-none">
-      {/* Upload zone — visible when no file or when idle */}
+    <div className="p-6 max-w-none space-y-5">
+      {/* Upload zone — no file yet */}
       {!selectedFile && (
-        <div className="mb-6">
-          <UploadZone onFileSelect={onFileSelect} />
-        </div>
+        <UploadArea
+          onFiles={(files) => {
+            const f = files[0];
+            if (f && f.type.startsWith("image/")) onFileSelect(f);
+          }}
+        />
       )}
 
-      {/* Preview + replace when file selected */}
+      {/* File preview */}
       {selectedFile && previewUrl && (
-        <div className="mb-6 bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border)]">
+        <Card variant="default" padding="none">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-default)]">
             <div className="flex items-center gap-2.5">
-              <ImageIcon size={16} strokeWidth={1.8} className="text-[var(--foreground-3)]" />
-              <span className="text-[13.5px] font-medium text-[var(--foreground)]">
+              <ImageIcon size={15} strokeWidth={1.8} className="text-[var(--fg-subtle)]" />
+              <span className="text-[13.5px] font-medium text-[var(--fg-default)] truncate max-w-xs">
                 {selectedFile.name}
               </span>
-              <span className="text-[12px] text-[var(--foreground-3)]">
+              <span className="text-[12px] text-[var(--fg-subtle)]">
                 ({(selectedFile.size / 1024).toFixed(0)} KB)
               </span>
             </div>
-            <button
-              onClick={() => {
-                const inp = document.createElement("input");
-                inp.type = "file";
-                inp.accept = "image/*";
-                inp.onchange = (e) => {
-                  const f = (e.target as HTMLInputElement).files?.[0];
-                  if (f) onFileSelect(f);
-                };
-                inp.click();
-              }}
-              className="flex items-center gap-1.5 text-[12px] text-[var(--foreground-3)] hover:text-[var(--primary)] transition-colors"
+            <Button
+              variant="ghost"
+              size="xs"
+              icon={<RefreshCw size={12} />}
+              onClick={handleReplaceFile}
             >
-              <RefreshCw size={13} />
               Thay ảnh
-            </button>
+            </Button>
           </div>
-          <div className="flex items-center justify-center bg-[var(--surface-secondary)] py-4 px-6">
+          <div className="flex items-center justify-center bg-[var(--bg-surface-2)] py-4 px-6">
             <img
               src={previewUrl}
               alt="Design preview"
-              className="max-h-72 max-w-full rounded-xl object-contain"
-              style={{ border: "1px solid var(--border)" }}
+              className="max-h-72 max-w-full rounded-[var(--radius-lg)] object-contain border border-[var(--border-default)]"
             />
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Loading state */}
+      {/* Loading */}
       {isLoading && (
-        <div className="mb-6 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-8 flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-[var(--border)] border-t-[var(--primary)] animate-spin" />
-          <div className="text-center">
-            <p className="text-[14px] font-semibold text-[var(--foreground)] mb-1">Đang phân tích...</p>
-            <p className="text-[13px] text-[var(--foreground-3)]">AI đang kiểm tra thiết kế theo tiêu chuẩn ZaloPay</p>
+        <Card variant="default" padding="md">
+          <div className="flex flex-col items-center gap-4 py-6">
+            <Spinner size="lg" />
+            <div className="text-center">
+              <p className="text-[14px] font-semibold text-[var(--fg-default)] mb-1">Đang phân tích...</p>
+              <p className="text-[13px] text-[var(--fg-muted)]">AI đang kiểm tra thiết kế theo tiêu chuẩn ZaloPay</p>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Error state */}
+      {/* Error */}
       {error && !isLoading && (
-        <div className="mb-6 bg-[var(--destructive-subtle)] border border-[var(--destructive)] rounded-2xl px-5 py-4">
-          <p className="text-[13.5px] font-medium text-[var(--destructive)]">{error}</p>
-        </div>
+        <Alert variant="danger" title="Lỗi phân tích">{error}</Alert>
       )}
 
       {/* Results */}
       {result && !isLoading && (
         <>
-          {/* Score + radar */}
-          <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--foreground-3)] mb-4">
-                Điểm tổng thể
-              </h3>
-              <div className="text-[52px] font-bold leading-none mb-3" style={{ color: "var(--accent)" }}>
-                {result.overallScore}
-                <span className="text-[20px] text-[var(--foreground-3)] font-normal">/10</span>
-              </div>
-              <ScoreBar score={result.overallScore ?? 0} />
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card variant="default" padding="md">
+              <CardHeader>
+                <CardTitle>Điểm tổng thể</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-5">
+                  <ProgressCircle value={(result.overallScore ?? 0) * 10} size={80} variant="success" />
+                  <div className="flex-1">
+                    <div className="text-[40px] font-bold leading-none text-[var(--accent-default)] tabular-nums">
+                      {result.overallScore}
+                      <span className="text-[18px] text-[var(--fg-subtle)] font-normal">/10</span>
+                    </div>
+                    <div className="mt-3">
+                      <ScoreBar score={result.overallScore ?? 0} />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--foreground-3)] mb-2">
-                Radar — Điểm theo hạng mục
-              </h3>
-              <RadarChartComponent categories={result.categories} />
-            </div>
+            <Card variant="default" padding="md">
+              <CardHeader>
+                <CardTitle>Radar — Điểm theo hạng mục</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RadarChartComponent categories={result.categories} />
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Report */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[var(--border)]">
-              <h3 className="text-[13px] font-semibold text-[var(--foreground)]">
+          <Card variant="default" padding="none">
+            <div className="px-5 py-3.5 border-b border-[var(--border-default)]">
+              <p className="text-[13px] font-semibold text-[var(--fg-default)]">
                 Báo cáo phân tích chi tiết
-              </h3>
+              </p>
             </div>
             <div className="p-5">
               <ReportPanel
@@ -224,15 +158,15 @@ export function BrandCheckerWorkspace({
                 error=""
               />
             </div>
-          </div>
+          </Card>
         </>
       )}
 
-      {/* Empty state when file selected but not yet analyzed */}
+      {/* Ready state — file selected, not analyzed */}
       {selectedFile && !result && !isLoading && !error && (
-        <div className="text-center py-12">
-          <p className="text-[14px] text-[var(--foreground-3)]">
-            Nhấn <strong className="text-[var(--foreground)]">Phân tích ngay</strong> ở bảng bên phải để bắt đầu.
+        <div className="text-center py-10">
+          <p className="text-[14px] text-[var(--fg-muted)]">
+            Nhấn <strong className="text-[var(--fg-default)]">Phân tích ngay</strong> ở bảng bên phải để bắt đầu.
           </p>
         </div>
       )}

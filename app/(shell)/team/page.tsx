@@ -15,7 +15,6 @@ export default function TeamPage() {
         "Design handoff",
         "SSO / LDAP integration",
       ]}
-      accentColor="#0ea5e9"
     />
   );
 }

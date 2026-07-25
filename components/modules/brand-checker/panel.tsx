@@ -1,7 +1,12 @@
 "use client";
 
-import { Target, Loader2 } from "lucide-react";
+import { Target } from "lucide-react";
 import type { BrandGuideline, AnalysisStatus } from "@/lib/types";
+import { Input } from "@/components/ui/input";
+import { GenerateButton } from "@/components/ui/generate-button";
+import { StatusBadge } from "@/components/ui/status-indicator";
+import { PanelSection } from "@/components/ui/card";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 
 interface BrandCheckerPanelProps {
   brandGuideline: BrandGuideline | null;
@@ -17,11 +22,11 @@ function ColorSwatch({ hex, label }: { hex: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className="w-5 h-5 rounded-md shrink-0"
-        style={{ background: hex, border: "1px solid var(--border)" }}
+        className="w-4.5 h-4.5 rounded-[var(--radius-sm)] shrink-0"
+        style={{ background: hex, border: "1px solid var(--border-default)", width: 18, height: 18 }}
       />
-      <span className="text-[12px] text-[var(--foreground-3)]">{label}</span>
-      <span className="text-[11px] font-mono text-[var(--foreground-3)] ml-auto">{hex}</span>
+      <span className="text-[12px] text-[var(--fg-muted)]">{label}</span>
+      <span className="text-[11px] font-mono text-[var(--fg-subtle)] ml-auto">{hex}</span>
     </div>
   );
 }
@@ -48,28 +53,23 @@ export function BrandCheckerPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[var(--border)]">
-        <div className="w-7 h-7 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center">
-          <Target size={15} strokeWidth={2} className="text-[var(--primary)]" />
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[var(--border-default)]">
+        <div className="w-7 h-7 rounded-[var(--radius-md)] bg-[var(--brand-subtle)] flex items-center justify-center">
+          <Target size={15} strokeWidth={2} className="text-[var(--brand-default)]" />
         </div>
         <div>
-          <div className="text-[13px] font-semibold text-[var(--foreground)]">Brand Checker</div>
-          <div className="text-[11px] text-[var(--foreground-3)]">Kiểm tra tuân thủ thương hiệu</div>
+          <div className="text-[13px] font-semibold text-[var(--fg-default)]">Brand Checker</div>
+          <div className="text-[11px] text-[var(--fg-subtle)]">Kiểm tra tuân thủ thương hiệu</div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-        {/* Brand guideline summary */}
-        <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--foreground-3)] mb-3">
-            Nhận diện thương hiệu
-          </h4>
-
+        {/* Brand identity */}
+        <PanelSection title="Nhận diện thương hiệu">
           {brandGuideline ? (
             <div className="space-y-3">
-              {/* Logo */}
               {logoUrl && (
-                <div className="flex items-center justify-center py-3 px-4 bg-[var(--surface-secondary)] rounded-xl">
+                <div className="flex items-center justify-center py-3 px-4 bg-[var(--bg-surface-2)] rounded-[var(--radius-lg)]">
                   <img
                     src={logoUrl}
                     alt="Brand logo"
@@ -79,19 +79,17 @@ export function BrandCheckerPanel({
                 </div>
               )}
 
-              {/* Brand name + tone */}
               <div>
-                <p className="text-[13px] font-semibold text-[var(--foreground)]">
+                <p className="text-[13px] font-semibold text-[var(--fg-default)]">
                   {brandGuideline.brandName || "ZaloPay"}
                 </p>
                 {brandGuideline.tone && (
-                  <p className="text-[12px] text-[var(--foreground-3)] mt-0.5">
+                  <p className="text-[12px] text-[var(--fg-muted)] mt-0.5">
                     {brandGuideline.tone.join(" · ")}
                   </p>
                 )}
               </div>
 
-              {/* Color swatches */}
               {swatches.length > 0 && (
                 <div className="space-y-1.5">
                   {swatches.map((s) => (
@@ -100,18 +98,17 @@ export function BrandCheckerPanel({
                 </div>
               )}
 
-              {/* Typography */}
               {brandGuideline.typography && (
-                <div className="text-[12px] text-[var(--foreground-3)] space-y-0.5">
+                <div className="text-[12px] text-[var(--fg-subtle)] space-y-0.5">
                   <div className="flex justify-between">
                     <span>Font tiêu đề</span>
-                    <span className="font-medium text-[var(--foreground-2)]">
+                    <span className="font-medium text-[var(--fg-muted)]">
                       {brandGuideline.typography.headingFont || "—"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Font nội dung</span>
-                    <span className="font-medium text-[var(--foreground-2)]">
+                    <span className="font-medium text-[var(--fg-muted)]">
                       {brandGuideline.typography.bodyFont || "—"}
                     </span>
                   </div>
@@ -119,75 +116,49 @@ export function BrandCheckerPanel({
               )}
             </div>
           ) : (
-            <div className="text-[13px] text-[var(--foreground-3)] animate-pulse">
-              Đang tải quy chuẩn...
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full rounded-[var(--radius-lg)]" />
+              <SkeletonText lines={2} />
             </div>
           )}
-        </section>
+        </PanelSection>
 
         {/* Analysis settings */}
-        <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--foreground-3)] mb-3">
-            Cài đặt phân tích
-          </h4>
-
+        <PanelSection title="Cài đặt phân tích">
           <div className="space-y-3">
-            <div>
-              <label className="block text-[12.5px] font-medium text-[var(--foreground)] mb-1.5">
-                Tên thiết kế
-              </label>
-              <input
-                type="text"
-                value={designName}
-                onChange={(e) => onDesignNameChange(e.target.value)}
-                placeholder="VD: Banner khuyến mãi Tết"
-                className="w-full px-3 py-2 text-[13px] bg-[var(--surface)] border border-[var(--border)] rounded-lg outline-none text-[var(--foreground)] placeholder:text-[var(--foreground-3)] focus:border-[var(--primary)] transition-colors"
-              />
-            </div>
+            <Input
+              label="Tên thiết kế"
+              value={designName}
+              onChange={(e) => onDesignNameChange(e.target.value)}
+              placeholder="VD: Banner khuyến mãi Tết"
+            />
 
             <div>
-              <label className="block text-[12.5px] font-medium text-[var(--foreground)] mb-1.5">
-                Mô hình AI
-              </label>
-              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--surface-secondary)] border border-[var(--border)] rounded-lg">
-                <div className="w-2 h-2 rounded-full bg-[var(--accent)]" />
-                <span className="text-[13px] text-[var(--foreground-2)]">Gemini 2.0 Flash</span>
+              <p className="text-[12.5px] font-medium text-[var(--fg-default)] mb-1.5">Mô hình AI</p>
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-surface-2)] border border-[var(--border-default)] rounded-[var(--radius-md)]">
+                <StatusBadge status="online" label="Gemini 2.0 Flash" />
               </div>
             </div>
           </div>
-        </section>
+        </PanelSection>
       </div>
 
-      {/* Analyze button — always at bottom */}
-      <div className="px-5 py-4 border-t border-[var(--border)] shrink-0">
+      {/* Analyze CTA */}
+      <div className="px-5 py-4 border-t border-[var(--border-default)] shrink-0">
         {!selectedFile && (
-          <p className="text-[12px] text-[var(--foreground-3)] text-center mb-3">
+          <p className="text-[12px] text-[var(--fg-subtle)] text-center mb-3">
             Tải lên một thiết kế trước để bắt đầu phân tích
           </p>
         )}
-        <button
+        <GenerateButton
+          fullWidth
+          loading={isLoading}
+          disabled={!selectedFile}
           onClick={onAnalyze}
-          disabled={!selectedFile || isLoading}
-          className="
-            w-full flex items-center justify-center gap-2.5
-            px-4 py-3 rounded-xl text-[14px] font-semibold text-white
-            bg-[var(--primary)] hover:bg-[var(--primary-hover)]
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition-all duration-150 shadow-sm
-          "
+          icon={<Target size={16} />}
         >
-          {isLoading ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Đang phân tích...
-            </>
-          ) : (
-            <>
-              <Target size={16} strokeWidth={2} />
-              Phân tích ngay
-            </>
-          )}
-        </button>
+          Phân tích ngay
+        </GenerateButton>
       </div>
     </div>
   );
