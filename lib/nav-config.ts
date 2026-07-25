@@ -7,6 +7,7 @@ import {
   Palette,
   PenTool,
   Archive,
+  FolderOpen,
   Clock,
   Star,
   Users,
@@ -39,7 +40,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Dashboard",
         href: "/dashboard",
         Icon: LayoutDashboard,
-        description: "Tổng quan hoạt động",
+        description: "Tổng quan & hoạt động gần đây",
       },
     ],
   },
@@ -58,16 +59,16 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Banner Generator",
         href: "/banner-generator",
         Icon: Image,
-        badge: "soon",
-        description: "Tạo banner tự động",
+        badge: "beta",
+        description: "Tạo banner tự động với AI",
       },
       {
         id: "image-generator",
         label: "Image Generator",
         href: "/image-generator",
         Icon: Sparkles,
-        badge: "soon",
-        description: "Sinh ảnh bằng AI",
+        badge: "beta",
+        description: "Sinh ảnh sáng tạo bằng AI",
       },
       {
         id: "video-generator",
@@ -75,23 +76,23 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/video-generator",
         Icon: Video,
         badge: "soon",
-        description: "Tạo video marketing",
+        description: "Tạo video marketing tự động",
       },
       {
         id: "creative-studio",
         label: "Creative Studio",
         href: "/creative-studio",
         Icon: Palette,
-        badge: "soon",
-        description: "Không gian sáng tác",
+        badge: "beta",
+        description: "Không gian thiết kế tích hợp AI",
       },
       {
         id: "prompt-studio",
         label: "Prompt Studio",
         href: "/prompt-studio",
         Icon: PenTool,
-        badge: "soon",
-        description: "Thư viện prompt AI",
+        badge: "new",
+        description: "Thư viện & tối ưu prompt AI",
       },
     ],
   },
@@ -103,22 +104,28 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Asset Library",
         href: "/asset-library",
         Icon: Archive,
-        badge: "soon",
         description: "Kho tài nguyên thiết kế",
+      },
+      {
+        id: "projects",
+        label: "Projects",
+        href: "/projects",
+        Icon: FolderOpen,
+        description: "Dự án và workspace nhóm",
       },
       {
         id: "history",
         label: "History",
         href: "/history",
         Icon: Clock,
-        description: "Lịch sử phân tích",
+        description: "Lịch sử phân tích & tạo nội dung",
       },
       {
         id: "favorites",
         label: "Favorites",
         href: "/favorites",
         Icon: Star,
-        description: "Thiết kế đã lưu",
+        description: "Thiết kế đã lưu yêu thích",
       },
       {
         id: "team",
@@ -126,7 +133,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/team",
         Icon: Users,
         badge: "soon",
-        description: "Cộng tác nhóm",
+        description: "Cộng tác và phân quyền nhóm",
       },
     ],
   },
@@ -145,7 +152,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Settings",
         href: "/settings",
         Icon: Settings,
-        description: "Cài đặt tài khoản",
+        description: "Tài khoản & cài đặt ứng dụng",
       },
     ],
   },
@@ -155,4 +162,10 @@ export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 export function findNavItem(id: string): NavItem | undefined {
   return ALL_NAV_ITEMS.find((item) => item.id === id);
+}
+
+export function findNavItemByPath(pathname: string): NavItem | undefined {
+  return ALL_NAV_ITEMS.find(
+    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
+  );
 }
