@@ -4,8 +4,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "AI Design Critic",
-  description: "Đánh giá mức độ tuân thủ thương hiệu và chất lượng thiết kế bằng AI",
+  title: "ZaloPay AI Creative Platform",
+  description: "AI-powered creative workspace for ZaloPay brand compliance and design generation",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -2,18 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Shell layout dimensions ── */
+:root {
+  --nav-h: 56px;
+  --sidebar-w: 280px;
+  --sidebar-w-collapsed: 72px;
+  --panel-w: 380px;
+}
+
 /* ── Light theme ── */
 :root {
-  --background: #f5f6fa;
+  --background: #f0f4f9;
   --surface: #ffffff;
   --surface-secondary: #f1f5f9;
-  --border: #e0e3eb;
-  --foreground: #1a1d29;
+  --border: #e0e4ef;
+  --border-strong: #c5cedf;
+  --foreground: #0f1a2d;
+  --foreground-2: #4a6180;
+  --foreground-3: #8aa0b5;
   --muted: #6b7280;
   --primary: #0033c9;
   --primary-hover: #002aa3;
+  --primary-subtle: #eff2ff;
   --accent: #00cf6a;
   --accent-text: #003d1f;
+  --accent-subtle: #e6fbf0;
+  --destructive: #dc2626;
+  --destructive-subtle: #fef2f2;
 
   --header-from: #0033c9;
   --header-via: #0066ff;
@@ -48,15 +63,22 @@
 /* ── Dark theme ── */
 .dark {
   --background: #0b1220;
-  --surface: #1e293b;
-  --surface-secondary: #111827;
-  --border: #334155;
-  --foreground: #f1f5f9;
+  --surface: #131e30;
+  --surface-secondary: #0f1928;
+  --border: #1e2e42;
+  --border-strong: #2a3d55;
+  --foreground: #e8f0f9;
+  --foreground-2: #8daabf;
+  --foreground-3: #4a6070;
   --muted: #94a3b8;
   --primary: #2f6bff;
   --primary-hover: #1a5ce6;
+  --primary-subtle: #0f1f3d;
   --accent: #00cf6a;
   --accent-text: #dcfce7;
+  --accent-subtle: #0d2a1a;
+  --destructive: #ef4444;
+  --destructive-subtle: #2d0f0f;
 
   --header-from: #001b75;
   --header-via: #0d3cc8;
@@ -88,17 +110,124 @@
   --prompt-card-meta-bg: #1e293b;
 }
 
+/* ── Always-dark sidebar variables ── */
+.app-sidebar {
+  --sb-bg: #0a1628;
+  --sb-bg-hover: #0f1e35;
+  --sb-header-border: rgba(255, 255, 255, 0.06);
+  --sb-fg: #7a9ab5;
+  --sb-fg-active: #c8dcf0;
+  --sb-group-label: #2d4462;
+  --sb-item-hover: rgba(255, 255, 255, 0.05);
+  --sb-item-active-bg: rgba(47, 107, 255, 0.18);
+  --sb-item-active-indicator: #3d72ff;
+  --sb-badge-soon-bg: rgba(255, 255, 255, 0.07);
+  --sb-badge-soon-fg: #4a6a88;
+  --sb-badge-beta-bg: rgba(47, 107, 255, 0.2);
+  --sb-badge-beta-fg: #7aabff;
+  --sb-badge-new-bg: rgba(0, 207, 106, 0.18);
+  --sb-badge-new-fg: #00cf6a;
+  --sb-scrollbar: rgba(255, 255, 255, 0.06);
+  --sb-logo-text: #e0eaf5;
+  --sb-divider: rgba(255, 255, 255, 0.05);
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
   background: var(--background);
   color: var(--foreground);
   line-height: 1.5;
   transition: background 0.2s, color 0.2s;
+}
+
+/* ── Shell layout ── */
+.shell-root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.shell-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--sb-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid var(--sb-header-border);
+}
+
+.app-sidebar.collapsed {
+  width: var(--sidebar-w-collapsed);
+  min-width: var(--sidebar-w-collapsed);
+}
+
+.app-workspace {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+  background: var(--background);
+  transition: background 0.2s;
+}
+
+.app-panel {
+  width: var(--panel-w);
+  min-width: var(--panel-w);
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+/* Sidebar scrollbar */
+.app-sidebar .sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.app-sidebar .sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-sidebar .sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--sb-scrollbar);
+  border-radius: 2px;
+}
+
+/* Workspace scrollbar */
+.app-workspace::-webkit-scrollbar {
+  width: 6px;
+}
+.app-workspace::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-workspace::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* Panel scrollbar */
+.app-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.app-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-panel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
 }
 
 /* ── Markdown report body ── */
