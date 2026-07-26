@@ -72,7 +72,7 @@ export default function VideoGeneratorPage() {
         actions={<Button variant="secondary" size="sm" icon={<Plus size={14} />}>Video mới</Button>}
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs
           variant="underline"
           defaultValue="library"
@@ -92,7 +92,7 @@ export default function VideoGeneratorPage() {
                     <p className="text-[12.5px] text-[var(--fg-muted)] mt-0.5">Video Generator đang được phát triển với Veo 2. Các video dưới đây là mẫu demo.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {SAMPLE_VIDEOS.map((v) => (
                     <VideoThumbnail key={v.id} {...v} />
                   ))}

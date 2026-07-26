@@ -117,7 +117,7 @@ function ProjectRow({ name, desc, status, assets, members, updated, color }: typ
         </div>
         <Badge variant={cfg.variant} size="sm">{cfg.label}</Badge>
       </div>
-      <button className="w-7 h-7 flex items-center justify-center rounded-[var(--radius-md)] opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-surface-2)] text-[var(--fg-muted)] transition-all">
+      <button className="w-7 h-7 flex items-center justify-center rounded-[var(--radius-md)] opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-[var(--bg-surface-2)] text-[var(--fg-muted)] transition-all">
         <MoreHorizontal size={14} />
       </button>
     </div>
@@ -145,7 +145,7 @@ export default function ProjectsPage() {
         }
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs
           variant="underline"
           defaultValue="all"

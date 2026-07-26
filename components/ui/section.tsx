@@ -24,7 +24,7 @@ export function WorkspaceHeader({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-4 px-6 py-5",
+        "flex items-center justify-between gap-4 px-4 sm:px-6 py-4 sm:py-5",
         "border-b border-[var(--border-default)] bg-[var(--bg-surface-1)]",
         "sticky top-0 z-10",
         className
@@ -108,7 +108,7 @@ export function PageContainer({
   maxWidth?: string;
 }) {
   return (
-    <div className={cn("p-6", maxWidth, className)}>
+    <div className={cn("p-4 sm:p-6", maxWidth, className)}>
       {children}
     </div>
   );

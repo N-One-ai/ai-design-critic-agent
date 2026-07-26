@@ -104,7 +104,7 @@ export function SearchModal() {
             className="flex-1 bg-transparent text-[14px] text-[var(--fg-default)] outline-none placeholder:text-[var(--fg-subtle)]"
           />
           {query && (
-            <button onClick={() => setQuery("")} className="text-[var(--fg-subtle)] hover:text-[var(--fg-muted)]">
+            <button onClick={() => setQuery("")} className="w-8 h-8 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--fg-subtle)] hover:text-[var(--fg-muted)] hover:bg-[var(--bg-surface-2)] shrink-0">
               <X size={14} />
             </button>
           )}

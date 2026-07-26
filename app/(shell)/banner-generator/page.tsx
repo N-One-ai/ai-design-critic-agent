@@ -72,7 +72,7 @@ export default function BannerGeneratorPage() {
         }
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs
           variant="underline"
           defaultValue="templates"
@@ -85,14 +85,14 @@ export default function BannerGeneratorPage() {
           {(id) => {
             if (id === "templates") return (
               <div className="mt-5">
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-5">
                   <div className="flex items-center gap-2">
                     <Badge variant="default">Tất cả</Badge>
                     <Badge variant="default">Seasonal</Badge>
                     <Badge variant="default">Promo</Badge>
                     <Badge variant="default">Social</Badge>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-auto">
                     <button className="flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] bg-[var(--brand-subtle)] text-[var(--brand-default)]">
                       <Grid size={14} />
                     </button>
@@ -111,7 +111,7 @@ export default function BannerGeneratorPage() {
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-[var(--radius-md)] flex items-center justify-center">
                           <Button size="xs" variant="primary">Dùng template này</Button>
                         </div>
-                        <button className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <Star size={11} className="text-white" />
                         </button>
                       </div>

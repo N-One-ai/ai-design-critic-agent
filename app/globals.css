@@ -447,6 +447,79 @@ body {
 .app-panel::-webkit-scrollbar-track { background: transparent; }
 .app-panel::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
 
+/* Utility: hide scrollbar while keeping scroll functionality */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ════════════════════════════════════
+   RESPONSIVE SHELL — BREAKPOINTS
+   Desktop (≥1024px): all three columns always visible — no changes.
+   Tablet (768–1023px): sidebar stays, panel collapses to 0 / expands via toggle.
+   Mobile (<768px): sidebar slides in as overlay, panel slides up as bottom drawer.
+   ════════════════════════════════════ */
+
+/* ── Tablet: panel collapsible ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-panel {
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    border-left: none;
+    transition:
+      width var(--duration-normal) var(--ease),
+      min-width var(--duration-normal) var(--ease);
+  }
+  .app-panel.panel-open {
+    width: 320px;
+    min-width: 320px;
+    overflow-y: auto;
+    border-left: 1px solid var(--border-default);
+  }
+}
+
+/* ── Mobile: sidebar overlay + panel bottom drawer ── */
+@media (max-width: 767px) {
+  /* Sidebar becomes a fixed overlay that slides in from the left */
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100dvh;
+    z-index: 60;
+    width: var(--sidebar-w) !important;
+    min-width: var(--sidebar-w) !important;
+    transform: translateX(-100%);
+    transition: transform var(--duration-normal) var(--ease);
+    box-shadow: var(--shadow-modal);
+  }
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Panel becomes a fixed bottom drawer */
+  .app-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-height: 82dvh;
+    z-index: 55;
+    transform: translateY(100%);
+    transition: transform var(--duration-normal) var(--ease);
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    border-left: none;
+    border-top: 1px solid var(--border-default);
+    box-shadow: var(--shadow-modal);
+    overflow-y: auto;
+  }
+  .app-panel.panel-open {
+    transform: translateY(0);
+  }
+}
+
 /* ════════════════════════════════════
    MARKDOWN REPORT STYLES
    Must be preserved exactly for lib/report.ts

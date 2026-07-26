@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   Search, Bell, Sun, Moon, Monitor, ChevronDown,
   HelpCircle, Zap, Check, LogOut, User, Settings,
-  ChevronRight,
+  ChevronRight, Menu, Settings2,
 } from "lucide-react";
 import { useSearch } from "@/contexts/search-context";
 import { findNavItemByPath } from "@/lib/nav-config";
@@ -94,7 +94,8 @@ function NotificationsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-[340px] bg-[var(--bg-surface-1)] border border-[var(--border-default)] rounded-[var(--radius-xl)] shadow-[var(--shadow-modal)] overflow-hidden">
+        /* Responsive width: nearly full-screen on mobile, fixed 340px on sm+ */
+        <div className="absolute right-0 top-10 z-50 w-[calc(100vw-1rem)] sm:w-[340px] max-w-[340px] bg-[var(--bg-surface-1)] border border-[var(--border-default)] rounded-[var(--radius-xl)] shadow-[var(--shadow-modal)] overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)]">
             <h3 className="text-[14px] font-semibold text-[var(--fg-default)]">Thông báo</h3>
             {unread > 0 && (
@@ -231,12 +232,12 @@ function Breadcrumb() {
   const Icon = current?.Icon;
   return (
     <div className="flex items-center gap-1.5 min-w-0">
-      <Link href="/dashboard" className="text-[13px] text-[var(--fg-subtle)] hover:text-[var(--fg-muted)] transition-colors shrink-0">
+      <Link href="/dashboard" className="text-[13px] text-[var(--fg-subtle)] hover:text-[var(--fg-muted)] transition-colors shrink-0 hidden sm:block">
         ZaloPay AI
       </Link>
       {current && (
         <>
-          <ChevronRight size={13} strokeWidth={1.5} className="text-[var(--fg-subtle)] shrink-0" />
+          <ChevronRight size={13} strokeWidth={1.5} className="text-[var(--fg-subtle)] shrink-0 hidden sm:block" />
           {Icon && <Icon size={13} strokeWidth={1.8} className="text-[var(--fg-muted)] shrink-0" />}
           <span className="text-[13.5px] font-semibold text-[var(--fg-default)] truncate">
             {current.label}
@@ -248,16 +249,32 @@ function Breadcrumb() {
 }
 
 /* ─── TopNav ─── */
-export function TopNav() {
+export function TopNav({
+  onToggleMobileSidebar,
+  panelOpen,
+  onTogglePanel,
+}: {
+  onToggleMobileSidebar?: () => void;
+  panelOpen?: boolean;
+  onTogglePanel?: () => void;
+}) {
   const { open } = useSearch();
 
   return (
     <header
-      className="h-[var(--nav-h)] flex items-center px-4 gap-3 shrink-0 bg-[var(--bg-surface-1)] border-b border-[var(--border-default)]"
+      className="h-[var(--nav-h)] flex items-center px-3 sm:px-4 gap-2 sm:gap-3 shrink-0 bg-[var(--bg-surface-1)] border-b border-[var(--border-default)]"
       style={{ zIndex: 40 }}
     >
-      {/* Left: breadcrumb */}
-      <div className="flex-1 min-w-0">
+      {/* Left: hamburger (mobile) + breadcrumb */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onToggleMobileSidebar}
+          className="md:hidden flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] text-[var(--fg-muted)] hover:text-[var(--fg-default)] hover:bg-[var(--bg-surface-3)] transition-colors shrink-0"
+          aria-label="Mở menu"
+        >
+          <Menu size={17} strokeWidth={1.8} />
+        </button>
         <Breadcrumb />
       </div>
 
@@ -276,22 +293,38 @@ export function TopNav() {
           </kbd>
         </button>
 
-        <div className="w-px h-5 bg-[var(--border-default)] mx-1" />
+        <div className="w-px h-5 bg-[var(--border-default)] mx-0.5 sm:mx-1" />
 
         <CreditsIndicator />
         <NotificationsDropdown />
         <ThemeToggle />
 
-        {/* Help */}
+        {/* Help — hidden on mobile to save space */}
         <button
-          className="flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] text-[var(--fg-muted)] hover:text-[var(--fg-default)] hover:bg-[var(--bg-surface-3)] transition-colors"
+          className="hidden md:flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] text-[var(--fg-muted)] hover:text-[var(--fg-default)] hover:bg-[var(--bg-surface-3)] transition-colors"
           aria-label="Trợ giúp"
           title="Trợ giúp"
         >
           <HelpCircle size={15} strokeWidth={1.8} />
         </button>
 
-        <div className="w-px h-5 bg-[var(--border-default)] mx-1" />
+        {/* Panel toggle — hidden on desktop (lg+) where panel is always visible */}
+        <button
+          onClick={onTogglePanel}
+          className={`
+            lg:hidden flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] transition-colors
+            ${panelOpen
+              ? "bg-[var(--brand-subtle)] text-[var(--brand-default)]"
+              : "text-[var(--fg-muted)] hover:text-[var(--fg-default)] hover:bg-[var(--bg-surface-3)]"
+            }
+          `}
+          aria-label="Cài đặt module"
+          title="Cài đặt module"
+        >
+          <Settings2 size={15} strokeWidth={1.8} />
+        </button>
+
+        <div className="w-px h-5 bg-[var(--border-default)] mx-0.5 sm:mx-1" />
 
         <UserMenu />
       </div>

@@ -49,7 +49,7 @@ export function BrandCheckerWorkspace({
   };
 
   return (
-    <div className="p-6 max-w-none space-y-5">
+    <div className="p-4 sm:p-6 max-w-none space-y-5">
       {/* Upload zone — no file yet */}
       {!selectedFile && (
         <UploadArea
@@ -64,12 +64,12 @@ export function BrandCheckerWorkspace({
       {selectedFile && previewUrl && (
         <Card variant="default" padding="none">
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-default)]">
-            <div className="flex items-center gap-2.5">
-              <ImageIcon size={15} strokeWidth={1.8} className="text-[var(--fg-subtle)]" />
-              <span className="text-[13.5px] font-medium text-[var(--fg-default)] truncate max-w-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ImageIcon size={15} strokeWidth={1.8} className="text-[var(--fg-subtle)] shrink-0" />
+              <span className="text-[13.5px] font-medium text-[var(--fg-default)] truncate min-w-0 flex-1">
                 {selectedFile.name}
               </span>
-              <span className="text-[12px] text-[var(--fg-subtle)]">
+              <span className="text-[12px] text-[var(--fg-subtle)] shrink-0">
                 ({(selectedFile.size / 1024).toFixed(0)} KB)
               </span>
             </div>

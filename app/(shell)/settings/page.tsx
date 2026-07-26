@@ -70,7 +70,7 @@ export default function SettingsPage() {
         icon={<Settings size={18} className="text-[var(--brand-default)]" />}
       />
 
-      <div className="p-6 max-w-2xl space-y-6">
+      <div className="p-4 sm:p-6 max-w-2xl space-y-6">
         {SETTINGS_GROUPS.map((group) => (
           <div key={group.label}>
             <p className="type-label text-[var(--fg-subtle)] mb-2 px-1">{group.label}</p>

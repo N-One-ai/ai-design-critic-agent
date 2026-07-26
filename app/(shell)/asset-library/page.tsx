@@ -42,7 +42,7 @@ function AssetCard({ name, type, size, cat, color }: { name: string; type: strin
             {type}
           </span>
         </div>
-        <button className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+        <button className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <Download size={12} />
         </button>
       </div>
@@ -79,7 +79,7 @@ export default function AssetLibraryPage() {
         }
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-[var(--bg-surface-1)] border border-[var(--border-default)] rounded-[var(--radius-lg)]">
             <Search size={14} className="text-[var(--fg-subtle)] shrink-0" />

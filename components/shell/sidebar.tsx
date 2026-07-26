@@ -26,10 +26,12 @@ function NavItemRow({
   item,
   isActive,
   collapsed,
+  onNavigate,
 }: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;
+  onNavigate?: () => void;
 }) {
   const Icon = item.Icon;
 
@@ -37,6 +39,7 @@ function NavItemRow({
     <Link
       href={item.href}
       title={collapsed ? item.label : undefined}
+      onClick={onNavigate}
       className={`
         group relative flex items-center gap-3 px-3 rounded-[var(--radius-md)] mx-2 my-0.5
         transition-all duration-150 outline-none
@@ -86,12 +89,22 @@ function NavItemRow({
 export function Sidebar({
   collapsed,
   onToggleCollapse,
+  mobileOpen = false,
+  onClose,
 }: {
   collapsed: boolean;
   onToggleCollapse: () => void;
+  mobileOpen?: boolean;
+  onClose?: () => void;
 }) {
   const pathname = usePathname();
   const [search, setSearch] = useState("");
+
+  /*
+   * On mobile the overlay always shows the full sidebar regardless of the
+   * desktop `collapsed` state, so we compute an effective expansion flag.
+   */
+  const showExpanded = !collapsed || mobileOpen;
 
   const filteredGroups = search.trim()
     ? NAV_GROUPS.map((g) => ({
@@ -105,21 +118,30 @@ export function Sidebar({
     : NAV_GROUPS;
 
   return (
-    <aside className={`app-sidebar ${collapsed ? "collapsed" : ""}`}>
+    <aside className={`app-sidebar ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
+
       {/* ── Logo / Header ── */}
       <div
         className="flex items-center h-[var(--nav-h)] px-3 shrink-0"
         style={{ borderBottom: "1px solid var(--sb-header-border)" }}
       >
-        {!collapsed ? (
+        {showExpanded ? (
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className="w-8 h-8 rounded-[var(--radius-lg)] bg-[#0033c9] flex items-center justify-center shrink-0 shadow-sm">
               <span className="text-white font-bold text-[12px] tracking-tight">ZP</span>
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-[13.5px] font-bold text-[var(--sb-logo-text)] leading-none">ZaloPay AI</div>
               <div className="text-[10.5px] text-[var(--sb-fg)] mt-0.5 leading-none">Creative Platform</div>
             </div>
+            {/* Close button — mobile only */}
+            <button
+              onClick={onClose}
+              className="md:hidden ml-auto shrink-0 flex items-center justify-center w-7 h-7 rounded-[var(--radius-md)] text-[var(--sb-fg)] hover:bg-[var(--sb-item-hover)] hover:text-[var(--sb-fg-active)] transition-colors"
+              aria-label="Đóng menu"
+            >
+              <X size={15} strokeWidth={2} />
+            </button>
           </div>
         ) : (
           <div className="mx-auto w-8 h-8 rounded-[var(--radius-lg)] bg-[#0033c9] flex items-center justify-center shadow-sm">
@@ -129,7 +151,7 @@ export function Sidebar({
       </div>
 
       {/* ── Search ── */}
-      {!collapsed && (
+      {showExpanded && (
         <div className="px-3 py-2.5" style={{ borderBottom: "1px solid var(--sb-header-border)" }}>
           <div className="flex items-center gap-2 h-8 px-2.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.07)] focus-within:border-[rgba(61,114,255,0.5)]">
             <Search size={12} strokeWidth={2} className="text-[var(--sb-fg)] shrink-0" />
@@ -152,7 +174,7 @@ export function Sidebar({
       <nav className="sidebar-nav flex-1 overflow-y-auto overflow-x-hidden py-2">
         {filteredGroups.map((group, gi) => (
           <div key={gi}>
-            {group.label && !collapsed && (
+            {group.label && showExpanded && (
               <div
                 className="px-5 mb-1 mt-4 first:mt-1 text-[10px] font-semibold uppercase tracking-widest"
                 style={{ color: "var(--sb-group-label)" }}
@@ -160,7 +182,7 @@ export function Sidebar({
                 {group.label}
               </div>
             )}
-            {collapsed && gi > 0 && (
+            {!showExpanded && gi > 0 && (
               <div className="mx-4 my-2 h-px" style={{ background: "var(--sb-divider)" }} />
             )}
             {group.items.map((item) => (
@@ -168,7 +190,8 @@ export function Sidebar({
                 key={item.id}
                 item={item}
                 isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-                collapsed={collapsed}
+                collapsed={!showExpanded}
+                onNavigate={mobileOpen ? onClose : undefined}
               />
             ))}
           </div>
@@ -178,24 +201,24 @@ export function Sidebar({
           <div className="flex flex-col items-center justify-center py-8 gap-2 text-center px-4">
             <Search size={18} strokeWidth={1.5} style={{ color: "var(--sb-fg)" }} />
             <p className="text-[12px]" style={{ color: "var(--sb-fg)" }}>
-              Không tìm thấy "{search}"
+              Không tìm thấy &ldquo;{search}&rdquo;
             </p>
           </div>
         )}
       </nav>
 
-      {/* ── Collapse toggle ── */}
-      <div className="shrink-0 px-3 py-3" style={{ borderTop: "1px solid var(--sb-header-border)" }}>
+      {/* ── Collapse toggle (desktop only) ── */}
+      <div className="hidden md:block shrink-0 px-3 py-3" style={{ borderTop: "1px solid var(--sb-header-border)" }}>
         <button
           onClick={onToggleCollapse}
           className={`
             w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)]
             text-[var(--sb-fg)] hover:bg-[var(--sb-item-hover)] hover:text-[var(--sb-fg-active)]
             transition-colors duration-150
-            ${collapsed ? "justify-center" : ""}
+            ${!showExpanded ? "justify-center" : ""}
           `}
         >
-          {collapsed
+          {!showExpanded
             ? <ChevronRight size={15} strokeWidth={2} />
             : (
               <>

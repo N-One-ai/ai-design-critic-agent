@@ -68,8 +68,8 @@ export default function PromptStudioPage() {
         }
       />
 
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-5">
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-5">
           <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-[var(--bg-surface-1)] border border-[var(--border-default)] rounded-[var(--radius-lg)]">
             <Search size={14} className="text-[var(--fg-subtle)] shrink-0" />
             <input
@@ -78,7 +78,7 @@ export default function PromptStudioPage() {
               className="flex-1 text-[13.5px] bg-transparent outline-none text-[var(--fg-default)] placeholder:text-[var(--fg-subtle)]"
             />
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {["Tất cả", "Marketing", "Social", "Email"].map((f, i) => (
               <button
                 key={f}

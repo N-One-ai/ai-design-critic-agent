@@ -1,7 +1,7 @@
 "use client";
 
 import { useRightPanel } from "@/contexts/right-panel-context";
-import { Settings2, ArrowRight } from "lucide-react";
+import { Settings2, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -53,10 +53,38 @@ function DefaultPanel() {
   );
 }
 
-export function RightPanel() {
+export function RightPanel({
+  panelOpen = false,
+  onClose,
+}: {
+  panelOpen?: boolean;
+  onClose?: () => void;
+}) {
   const { content } = useRightPanel();
+
   return (
-    <aside className="app-panel">
+    <aside className={`app-panel ${panelOpen ? "panel-open" : ""}`}>
+      {/*
+       * Mobile/tablet header: drag handle (mobile) + title + close button.
+       * Hidden on desktop (lg+) where the panel is always visible inline.
+       */}
+      <div className="lg:hidden sticky top-0 z-10 bg-[var(--bg-surface-1)] border-b border-[var(--border-default)]">
+        {/* Drag handle — visible only on mobile */}
+        <div className="md:hidden flex justify-center pt-2.5 pb-1">
+          <div className="w-8 h-1 bg-[var(--border-strong)] rounded-full" />
+        </div>
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <p className="text-[13px] font-semibold text-[var(--fg-default)]">Cài đặt module</p>
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-md)] text-[var(--fg-muted)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--fg-default)] transition-colors"
+            aria-label="Đóng"
+          >
+            <X size={15} strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
       {content ?? <DefaultPanel />}
     </aside>
   );

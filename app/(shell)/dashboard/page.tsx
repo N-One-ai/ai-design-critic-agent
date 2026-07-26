@@ -6,6 +6,7 @@ import {
   Target, Sparkles, Image, Archive, FolderOpen, Film,
   Star, ArrowRight, Plus, Zap, Bell, Rocket,
   ChevronRight, ChevronLeft, CheckCircle2, TrendingUp,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, PanelSection } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,31 @@ import { ProgressBar } from "@/components/ui/progress";
 import { Avatar, AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useRightPanel } from "@/contexts/right-panel-context";
+import {
+  RECENT_PROJECTS,
+  RECENT_ASSETS,
+  PLATFORM_STATS,
+  NEWS_ITEMS,
+  PROJECT_STATUS_CONFIG,
+  type StatIconId,
+  type NewsIconId,
+} from "@/data/dashboard";
+
+/* ── Icon lookup maps (icon refs cannot live in data files) ── */
+const STAT_ICON_MAP: Record<StatIconId, LucideIcon> = {
+  projects: FolderOpen,
+  assets:   Archive,
+  credits:  Zap,
+  reports:  Target,
+  images:   Image,
+  videos:   Film,
+};
+
+const NEWS_ICON_MAP: Record<NewsIconId, LucideIcon> = {
+  check:  CheckCircle2,
+  rocket: Rocket,
+  bell:   Bell,
+};
 
 /* ═══════════════════════════════════════════════════════
    HERO CAROUSEL — SVG Illustrations
@@ -183,8 +209,7 @@ function HeroCarousel() {
 
   return (
     <div
-      className="relative overflow-hidden select-none rounded-[var(--radius-2xl)]"
-      style={{ height: 300 }}
+      className="relative overflow-hidden select-none rounded-[var(--radius-2xl)] h-[240px] sm:h-[300px]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
@@ -420,44 +445,6 @@ const FEATURE_CARDS: FeatureCardData[] = [
    DATA
 ═══════════════════════════════════════════════════════ */
 
-const PLATFORM_STATS = [
-  { id: "projects",  label: "Projects",         value: "24",    icon: FolderOpen, color: "#2f6bff" },
-  { id: "assets",    label: "Assets",           value: "1,482", icon: Archive,    color: "#00cf6a" },
-  { id: "credits",   label: "AI Credits",       value: "9,160", icon: Zap,        color: "#f59e0b" },
-  { id: "reports",   label: "Brand Reports",    value: "248",   icon: Target,     color: "#0033c9" },
-  { id: "images",    label: "Gen. Images",      value: "1,024", icon: Image,      color: "#8b5cf6" },
-  { id: "videos",    label: "Gen. Videos",      value: "38",    icon: Film,       color: "#ec4899" },
-];
-
-const RECENT_PROJECTS = [
-  { id: "1", name: "Tết Nguyên Đán 2025",  module: "Banner Generator", updated: "10 phút",  status: "active",  color: "#0033c9", files: 24, members: ["Ngọc NA", "Minh TT"] },
-  { id: "2", name: "Campaign Q1/2025",      module: "Image Generator",  updated: "2 giờ",    status: "review",  color: "#00cf6a", files: 12, members: ["Ngọc NA"] },
-  { id: "3", name: "ZaloPay App Rebrand",   module: "Brand Checker",    updated: "Hôm qua",  status: "done",    color: "#8b5cf6", files: 8,  members: ["Ngọc NA", "Tuan LM", "Lan PH"] },
-  { id: "4", name: "Cashback Q4 Campaign",  module: "Creative Studio",  updated: "3 ngày",   status: "active",  color: "#f59e0b", files: 18, members: ["Ngọc NA"] },
-];
-
-const PROJECT_STATUS: Record<string, { variant: "success" | "warning" | "default"; label: string }> = {
-  active: { variant: "success", label: "Đang chạy" },
-  review: { variant: "warning", label: "Đang duyệt" },
-  done:   { variant: "default", label: "Hoàn thành" },
-};
-
-const RECENT_ASSETS = [
-  { id:"1",  type:"image",  name:"Hero Banner Tết",      c1:"#0033c9", c2:"#1a44dd" },
-  { id:"2",  type:"image",  name:"ZaloPay Icon Set",      c1:"#00cf6a", c2:"#00a354" },
-  { id:"3",  type:"banner", name:"Flash Sale Banner",      c1:"#e53e3e", c2:"#c53030" },
-  { id:"4",  type:"image",  name:"Lifestyle Photo",        c1:"#8b5cf6", c2:"#6d28d9" },
-  { id:"5",  type:"image",  name:"App Screenshot",         c1:"#06b6d4", c2:"#0891b2" },
-  { id:"6",  type:"banner", name:"Cashback Campaign",      c1:"#f59e0b", c2:"#d97706" },
-  { id:"7",  type:"image",  name:"Brand Pattern",          c1:"#2f6bff", c2:"#0033c9" },
-  { id:"8",  type:"image",  name:"Festive Illustration",   c1:"#ec4899", c2:"#db2777" },
-];
-
-const NEWS_ITEMS = [
-  { id:"1", Icon: CheckCircle2, title: "Brand Checker 2.0",           desc: "Phân tích nhanh hơn 3×, báo cáo chi tiết và score breakdown mới.",    badge: "primary" as const, badgeLabel: "Cập nhật", time: "Hôm nay" },
-  { id:"2", Icon: Rocket,       title: "42 Template Tết 2025",         desc: "Template Tết Nguyên Đán 2025 đã sẵn sàng trong thư viện.",             badge: "accent"  as const, badgeLabel: "Mới",       time: "Hôm qua" },
-  { id:"3", Icon: Bell,         title: "ZaloPay Brand Guideline v2.4", desc: "Tài liệu brand guideline phiên bản mới đã được cập nhật hệ thống.",    badge: "default" as const, badgeLabel: "Thông báo", time: "3 ngày"  },
-];
 
 /* ─── Dashboard right panel ─── */
 function DashboardPanel() {
@@ -544,7 +531,7 @@ export default function DashboardPage() {
   }, [setContent]);
 
   return (
-    <div className="p-6 max-w-5xl space-y-7">
+    <div className="p-4 sm:p-6 max-w-5xl space-y-6 sm:space-y-7">
 
       {/* ── 1. Hero Carousel ── */}
       <HeroCarousel />
@@ -557,7 +544,7 @@ export default function DashboardPage() {
             Khám phá tất cả <ChevronRight size={12} />
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {FEATURE_CARDS.map(({ id, title, desc, cta, href, gradient, available, Illustration: Illus }) => (
             <div
               key={id}
@@ -601,7 +588,7 @@ export default function DashboardPage() {
         </div>
         <div className="space-y-2.5">
           {RECENT_PROJECTS.map((p) => {
-            const st = PROJECT_STATUS[p.status];
+            const st = PROJECT_STATUS_CONFIG[p.status];
             return (
               <div
                 key={p.id}
@@ -615,7 +602,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13.5px] font-semibold text-[var(--fg-default)] truncate">{p.name}</p>
-                  <p className="text-[12px] text-[var(--fg-muted)]">{p.module} · {p.files} files</p>
+                  <p className="text-[12px] text-[var(--fg-muted)] truncate">{p.module} · {p.files} files</p>
                 </div>
                 <AvatarGroup avatars={p.members.map((m) => ({ name: m }))} size="xs" max={3} />
                 <div className="hidden sm:flex items-center gap-2 shrink-0">
@@ -632,15 +619,18 @@ export default function DashboardPage() {
       <section>
         <p className="type-label text-[var(--fg-subtle)] mb-4">Thống kê nền tảng</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {PLATFORM_STATS.map(({ id, label, value, icon: Icon, color }) => (
-            <Card key={id} variant="default" padding="sm" interactive>
-              <div className="w-8 h-8 rounded-[var(--radius-md)] flex items-center justify-center mb-3" style={{ background: `${color}1a` }}>
-                <Icon size={15} strokeWidth={1.8} style={{ color }} />
-              </div>
-              <p className="text-[22px] font-bold text-[var(--fg-default)] leading-none tabular-nums mb-1">{value}</p>
-              <p className="text-[11.5px] text-[var(--fg-muted)]">{label}</p>
-            </Card>
-          ))}
+          {PLATFORM_STATS.map(({ id, label, value, color }) => {
+            const Icon = STAT_ICON_MAP[id];
+            return (
+              <Card key={id} variant="default" padding="sm" interactive>
+                <div className="w-8 h-8 rounded-[var(--radius-md)] flex items-center justify-center mb-3" style={{ background: `${color}1a` }}>
+                  <Icon size={15} strokeWidth={1.8} style={{ color }} />
+                </div>
+                <p className="text-[22px] font-bold text-[var(--fg-default)] leading-none tabular-nums mb-1">{value}</p>
+                <p className="text-[11.5px] text-[var(--fg-muted)]">{label}</p>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
@@ -652,7 +642,7 @@ export default function DashboardPage() {
             Thư viện <ChevronRight size={12} />
           </Link>
         </div>
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2.5">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
           {RECENT_ASSETS.map((asset) => (
             <div
               key={asset.id}
@@ -686,7 +676,9 @@ export default function DashboardPage() {
             <Badge variant="accent" size="sm">3 mới</Badge>
           </div>
           <div className="divide-y divide-[var(--border-subtle)]">
-            {NEWS_ITEMS.map(({ id, Icon: IconComp, title, desc, badge, badgeLabel, time }) => (
+            {NEWS_ITEMS.map(({ id, iconId, title, desc, badge, badgeLabel, time }) => {
+              const IconComp = NEWS_ICON_MAP[iconId];
+              return (
               <div key={id} className="flex items-start gap-3.5 px-5 py-4 hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer">
                 <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--brand-subtle)] flex items-center justify-center shrink-0 mt-0.5">
                   <IconComp size={14} strokeWidth={1.8} className="text-[var(--brand-default)]" />
@@ -700,7 +692,8 @@ export default function DashboardPage() {
                 </div>
                 <span className="text-[11px] text-[var(--fg-subtle)] shrink-0 mt-0.5">{time}</span>
               </div>
-            ))}
+              );
+            })}
           </div>
           <div className="px-5 py-3 border-t border-[var(--border-default)] flex items-center justify-between">
             <span className="text-[12px] text-[var(--fg-subtle)]">ZaloPay AI Creative Platform v1.0</span>

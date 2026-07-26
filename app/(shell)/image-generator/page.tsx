@@ -33,7 +33,7 @@ function ImagePlaceholder({ item }: { item: typeof GALLERY_ITEMS[0] }) {
       <div className="absolute inset-0 flex items-center justify-center">
         <Sparkles size={24} strokeWidth={1} className="text-white/30" />
       </div>
-      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+      <div className="absolute inset-0 bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-end p-3">
         <div className="w-full">
           <p className="text-[11px] text-white/80 leading-snug line-clamp-2">{item.prompt}</p>
           <div className="flex items-center gap-1.5 mt-2">
@@ -69,7 +69,7 @@ export default function ImageGeneratorPage() {
         actions={<Button variant="secondary" size="sm" icon={<Grid size={14} />}>Gallery</Button>}
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs
           variant="underline"
           defaultValue="generate"

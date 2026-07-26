@@ -75,7 +75,7 @@ export default function CreativeStudioPage() {
         }
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs
           variant="underline"
           defaultValue="projects"
@@ -88,7 +88,7 @@ export default function CreativeStudioPage() {
           {(id) => {
             if (id === "projects") return (
               <div className="mt-5">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {RECENT_PROJECTS.map((p) => (
                     <ProjectCard key={p.id} {...p} />
                   ))}

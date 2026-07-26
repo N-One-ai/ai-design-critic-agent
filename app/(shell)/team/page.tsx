@@ -49,7 +49,7 @@ function MemberRow({ name, email, role, status, joined, color }: typeof MEMBERS[
           {role}
         </Badge>
       </div>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button className="w-7 h-7 flex items-center justify-center rounded-[var(--radius-md)] hover:bg-[var(--bg-surface-2)] text-[var(--fg-muted)]">
           <Mail size={13} />
         </button>
@@ -84,8 +84,8 @@ export default function TeamPage() {
         }
       />
 
-      <div className="p-6">
-        <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: "Tổng thành viên",  value: MEMBERS.length, color: "var(--brand-default)" },
             { label: "Đang online",       value: online,          color: "var(--color-success-fg)" },

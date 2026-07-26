@@ -47,7 +47,7 @@ function FavoriteCard({ title, module, time, color, icon: Icon }: typeof FAVORIT
         <div className="absolute top-2 right-2 flex gap-1.5">
           <Star size={13} className="text-amber-400 fill-amber-400" />
         </div>
-        <div className="absolute bottom-0 left-0 right-0 p-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/50 to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 p-3 flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/50 to-transparent">
           <Button size="xs" variant="primary" icon={<Download size={10} />}>Tải về</Button>
           <button className="w-6 h-6 rounded flex items-center justify-center bg-white/20 text-white hover:bg-red-500/40 transition-colors">
             <Trash2 size={11} />
@@ -81,7 +81,7 @@ export default function FavoritesPage() {
         icon={<Star size={18} className="text-amber-400" />}
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs
           variant="underline"
           defaultValue="all"
@@ -107,7 +107,7 @@ export default function FavoritesPage() {
               </div>
             );
             return (
-              <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {items.map((f) => <FavoriteCard key={f.id} {...f} />)}
               </div>
             );
