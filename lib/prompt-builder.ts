@@ -90,7 +90,20 @@ const RESPONSE_SCHEMA_EXAMPLE = {
       conclusion: "string",
     },
     visualHierarchy: categorySchema(),
+    layout: {
+      score: "number 0-10, or null",
+      conclusion: "string - 1-2 sentences on layout quality, whitespace, balance, and alignment",
+    },
+    ctaEvaluation: {
+      score: "number 0-10, or null if a CTA is inapplicable for this design type",
+      ctaFound: "boolean",
+      ctaText: "string - exact text of the primary CTA if found, else null",
+      ctaClarity: "string - how clear and compelling the CTA is",
+      ctaPlacement: "string - where the CTA is placed and whether placement is optimal",
+      conclusion: "string - 1-2 sentences verdict on CTA effectiveness",
+    },
   },
+  strengths: ["string - a key positive aspect of the design, citing a specific visual element"],
   mainIssues: ["string - a key problem found across the entire design"],
   improvementSuggestions: ["string - concrete, actionable improvement"],
   aiRedesignPrompt: {
@@ -253,10 +266,13 @@ You will be shown a design image (e.g. an ad banner, landing page, or marketing 
 - colorCompliance: how well the design's color palette matches the brand guideline's colors.
 - typographyCompliance: whether the fonts and typographic style match the guideline's typography rules.
 - visualHierarchy: how effectively the design guides the viewer's eye through the content in order of importance.
+- layout: assess the overall layout quality — whitespace usage, visual balance, element alignment, grid consistency, and whether the design feels organized or cluttered.
+- ctaEvaluation: evaluate the call-to-action — is a CTA present, what does it say, where is it placed, and is it clearly visible and prominent enough to drive action?
 
-For each category, write a "conclusion": 1-2 sentences giving a concise verdict for that category only, citing specific visual details. Do NOT list strengths, weaknesses, or recommendations per category — all issues and recommendations belong only in the consolidated "mainIssues" and "improvementSuggestions" lists.
+For each category, write a "conclusion": 1-2 sentences giving a concise verdict for that category only, citing specific visual details. Do NOT list strengths, weaknesses, or recommendations per category — all issues and recommendations belong only in the consolidated lists below.
 
-After evaluating all categories, produce two consolidated, de-duplicated top-level lists:
+After evaluating all categories, produce these consolidated top-level fields:
+- "strengths": the 3–5 most notable positive aspects of the design, citing specific visual elements. Do not repeat information already in category conclusions.
 - "mainIssues": the key problems found across the entire design. Each issue should appear only once, even if it relates to multiple categories.
 - "improvementSuggestions": concrete, actionable improvements — specify a color/hex change, a size/scale change, a position/alignment change, a spacing/padding change, or a contrast change (with approximate values where relevant, e.g. "#0033C9", "increase to 120px", "move 24px left", "add 16px padding above"). Do NOT write generic advice.
 
@@ -288,7 +304,8 @@ ${
 }
 
 Scoring rules:
-- Score every category from 1 (very poor) to 10 (excellent) — logoCompliance, trademarkCompliance, colorCompliance, and typographyCompliance use 0-10.
+- Score every category from 1 (very poor) to 10 (excellent) — logoCompliance, trademarkCompliance, colorCompliance, typographyCompliance, visualHierarchy, and layout use 0-10.
+- ctaEvaluation is scored 0-10; use null only if the design type makes a CTA entirely inapplicable (e.g. a pure informational reference sheet with no conversion intent).
 - If a brand guideline IS provided (as JSON), compare the design's colors, fonts, logo usage, and spacing against it.
 - Be specific and reference what you actually see in the image.
 - Write all text content in the following language: ${language}.

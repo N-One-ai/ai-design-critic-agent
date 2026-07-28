@@ -80,12 +80,21 @@ export interface TrademarkComplianceCategory extends CategoryScore {
   complianceScore?: number | null;
 }
 
+export interface CtaEvaluationCategory extends CategoryScore {
+  ctaFound?: boolean;
+  ctaText?: string | null;
+  ctaClarity?: string;
+  ctaPlacement?: string;
+}
+
 export interface AnalysisCategories {
   logoCompliance?: LogoComplianceCategory;
   trademarkCompliance?: TrademarkComplianceCategory;
   colorCompliance?: CategoryScore;
   typographyCompliance?: CategoryScore;
   visualHierarchy?: CategoryScore;
+  layout?: CategoryScore;
+  ctaEvaluation?: CtaEvaluationCategory;
 }
 
 export interface AiRedesignPrompt {
@@ -98,6 +107,7 @@ export interface AnalysisResult {
   overallScore?: number | null;
   categories?: AnalysisCategories;
   summary?: string;
+  strengths?: string[];
   mainIssues?: string[];
   improvementSuggestions?: string[];
   aiRedesignPrompt?: AiRedesignPrompt;
@@ -140,3 +150,33 @@ export interface CompareResult {
 }
 
 export type AnalysisStatus = "idle" | "loading" | "done" | "error";
+
+// ── Banner Generator ──────────────────────────────────────────────────────────
+
+export interface BannerFormValues {
+  campaignObjective: string;
+  promotion: string;
+  brand: string;
+  targetAudience: string;
+  platform: string;
+  language: string;
+  dimensions: { width: number; height: number };
+  visualStyle: string;
+  referenceImageDataUrl?: string;
+}
+
+export interface BannerResult {
+  generationId: string;
+  imageDataUrl: string;
+  prompt: string;
+  negativePrompt?: string;
+  dimensions: { width: number; height: number };
+  platform?: string;
+  visualStyle?: string;
+  campaignObjective?: string;
+  promotion?: string;
+  brand?: string;
+  createdAt: string;
+}
+
+export type BannerStatus = "idle" | "loading" | "done" | "error";

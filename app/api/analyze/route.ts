@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
-import { analyzeDesign, QuotaExceededError } from "@/lib/llm-client";
+import { GeminiProvider } from "@/lib/ai/providers/gemini";
+import { ImageAnalysisService } from "@/lib/ai/services/image-analysis";
+import { QuotaExceededError as AIQuotaExceededError, InvalidRequestError } from "@/lib/ai/errors";
+import { aiProviderConfig } from "@/lib/config";
 import { renderMarkdownReport, computeOverallScore } from "@/lib/report";
 
 export const runtime = "nodejs";
@@ -58,6 +61,11 @@ function resolveImageContent(
     return `data:${image.mimeType};base64,${image.base64}`;
   }
   return null;
+}
+
+function getService(): ImageAnalysisService {
+  const provider = new GeminiProvider(aiProviderConfig.gemini);
+  return new ImageAnalysisService(provider);
 }
 
 export async function POST(req: NextRequest) {
@@ -126,62 +134,54 @@ export async function POST(req: NextRequest) {
     (brandGuideline?.trademark as Record<string, (string | { file: string })[]> | undefined)
       ?.variants || [];
 
-  const officialLogoContents = loadAssetList(logoReferenceImages);
-  const deprecatedLogoContents = loadAssetList(deprecatedAssets);
+  const officialLogoContents     = loadAssetList(logoReferenceImages);
+  const deprecatedLogoContents   = loadAssetList(deprecatedAssets);
   const trademarkReferenceContents = loadAssetList(
     trademarkVariants.map((v) => (typeof v === "string" ? v : v.file))
   );
 
   try {
-    const analysis = await analyzeDesign({
-      imageContent,
-      logoReferenceContent,
-      officialLogoContents,
-      trademarkReferenceContents,
-      deprecatedLogoContents,
-      brandGuideline,
-      designName,
-    });
+    const service  = getService();
+    const analysis = await service.execute(
+      {
+        imageDataUrl: imageContent,
+        designName,
+        brandGuideline,
+        referenceAssets: {
+          logoDataUrl:   logoReferenceContent,
+          officialLogos: officialLogoContents.map((i) => ({ file: i.file, dataUrl: i.content })),
+          trademarks:    trademarkReferenceContents.map((i) => ({ file: i.file, dataUrl: i.content })),
+          deprecatedLogos: deprecatedLogoContents.map((i) => ({ file: i.file, dataUrl: i.content })),
+        },
+        language: process.env.REPORT_LANGUAGE ?? "vi",
+      },
+      { timeoutMs: 90_000 },
+    );
 
     const categories = analysis.categories as
       | Record<string, Record<string, unknown>>
       | undefined;
-
-    if (
-      categories?.trademarkCompliance &&
-      typeof categories.trademarkCompliance.score !== "number"
-    ) {
-      categories.trademarkCompliance.score =
-        categories.trademarkCompliance.complianceScore ?? null;
-    }
 
     const overallScore = computeOverallScore(
       categories as Record<string, { score?: number | null }>
     );
 
     const assetMap: Record<string, string> = {};
-    officialLogoContents.forEach((item) => {
-      assetMap[item.file] = item.content;
-    });
-    trademarkReferenceContents.forEach((item) => {
-      assetMap[item.file] = item.content;
-    });
-    deprecatedLogoContents.forEach((item) => {
-      assetMap[item.file] = item.content;
-    });
+    officialLogoContents.forEach((item) => { assetMap[item.file] = item.content; });
+    trademarkReferenceContents.forEach((item) => { assetMap[item.file] = item.content; });
+    deprecatedLogoContents.forEach((item) => { assetMap[item.file] = item.content; });
     if (logoReferenceContent) assetMap["assets/logo-current.png"] = logoReferenceContent;
 
     const report = renderMarkdownReport(analysis, overallScore, assetMap);
 
-    const toUrl = (file: string | undefined) =>
-      file ? `/${file}` : null;
+    const toUrl = (file: string | undefined) => (file ? `/${file}` : null);
     const assets = {
       referenceLogo: toUrl(
         (brandGuideline?.logo as Record<string, string> | undefined)?.primaryLogo
       ),
-      officialLogos: logoReferenceImages.map(toUrl),
-      deprecatedLogos: deprecatedAssets.map(toUrl),
-      trademarkVariants: trademarkVariants.map((v) =>
+      officialLogos:      logoReferenceImages.map(toUrl),
+      deprecatedLogos:    deprecatedAssets.map(toUrl),
+      trademarkVariants:  trademarkVariants.map((v) =>
         toUrl(typeof v === "string" ? v : v.file)
       ),
       matchedTrademark:
@@ -191,18 +191,28 @@ export async function POST(req: NextRequest) {
     };
 
     return NextResponse.json({
-      designName: analysis.designName,
+      designName:           analysis.designName,
       overallScore,
-      categories: analysis.categories,
-      summary: analysis.summary,
-      aiRedesignPrompt: analysis.aiRedesignPrompt,
+      categories:           analysis.categories,
+      summary:              analysis.summary,
+      strengths:            analysis.strengths,
+      mainIssues:           analysis.mainIssues,
+      improvementSuggestions: analysis.improvementSuggestions,
+      aiRedesignPrompt:     analysis.aiRedesignPrompt,
       assets,
       report,
     });
   } catch (err) {
     console.error("Analysis failed:", err);
 
-    if (err instanceof QuotaExceededError) {
+    if (err instanceof InvalidRequestError) {
+      return NextResponse.json(
+        { error: "Lỗi xác thực API. Vui lòng kiểm tra GEMINI_API_KEY trong cấu hình.", errorCode: "INVALID_REQUEST" },
+        { status: 500 },
+      );
+    }
+
+    if (err instanceof AIQuotaExceededError) {
       return NextResponse.json(
         {
           error: "Đã vượt quá giới hạn API Gemini. Vui lòng thử lại sau vài phút.",

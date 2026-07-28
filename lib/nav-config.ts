@@ -138,6 +138,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "System",
     items: [
       {
         id: "design-system",

@@ -16,7 +16,10 @@ import { findNavItemByPath } from "@/lib/nav-config";
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
@@ -29,7 +32,7 @@ function ThemeToggle() {
     { id: "dark",   label: "Tối",       Icon: Moon },
     { id: "system", label: "Hệ thống",  Icon: Monitor },
   ] as const;
-  const active = THEMES.find((t) => t.id === theme) ?? THEMES[2];
+  const active = mounted ? (THEMES.find((t) => t.id === theme) ?? THEMES[2]) : THEMES[2];
 
   return (
     <div ref={ref} className="relative">

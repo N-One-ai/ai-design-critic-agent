@@ -6,6 +6,18 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { NAV_GROUPS, type NavItem, type NavBadge } from "@/lib/nav-config";
 
+/* ─── ZaloPay Trademark Z ─── */
+function ZMark({ fill = "#0050e6" }: { fill?: string }) {
+  return (
+    <svg width="14" height="16" viewBox="0 0 310.91 358.18" fill="none" aria-hidden="true">
+      <path
+        d="M280.11,284.65c-57.41-19.59-110.44-22.91-154.53-19.29l154.53-171.91,30.03-33.4L280.11,0l-3.85,1.57c-4.1,1.68-8.3,3.29-12.5,4.79-34.66,12.48-71.1,18.82-108.31,18.82-41.81,0-82.46-7.94-120.81-23.61L30.79,0,0,61.59l4.4,1.86c8.7,3.68,17.5,7.02,26.39,10.03,40,13.56,81.81,20.43,124.66,20.43,9.95,0,19.97-.38,29.92-1.14L30.79,264.74.77,298.13l30.02,60.05h0s3.85-1.57,3.85-1.57c4.08-1.67,8.29-3.28,12.49-4.79,34.68-12.49,71.13-18.82,108.32-18.82,41.8,0,82.45,7.95,120.81,23.62l3.84,1.57h0s30.8-61.59,30.8-61.59c-10.39-4.53-20.66-8.48-30.8-11.94Z"
+        fill={fill}
+      />
+    </svg>
+  );
+}
+
 /* ─── Badge ─── */
 function NavBadgeChip({ type }: { type: NavBadge }) {
   const styles: Record<NavBadge, string> = {
@@ -62,7 +74,7 @@ function NavItemRow({
         className="shrink-0 transition-none"
       />
 
-      {/* Label + description */}
+      {/* Label + description — hidden when collapsed */}
       {!collapsed && (
         <>
           <div className="flex-1 min-w-0">
@@ -77,7 +89,7 @@ function NavItemRow({
         </>
       )}
 
-      {/* Collapsed: new/beta dot indicator */}
+      {/* Collapsed: dot indicator for new/beta items */}
       {collapsed && item.badge && item.badge !== "soon" && (
         <span className="absolute right-2 top-2 w-1.5 h-1.5 rounded-full bg-[var(--sb-item-active-indicator)]" />
       )}
@@ -100,12 +112,6 @@ export function Sidebar({
   const pathname = usePathname();
   const [search, setSearch] = useState("");
 
-  /*
-   * On mobile the overlay always shows the full sidebar regardless of the
-   * desktop `collapsed` state, so we compute an effective expansion flag.
-   */
-  const showExpanded = !collapsed || mobileOpen;
-
   const filteredGroups = search.trim()
     ? NAV_GROUPS.map((g) => ({
         ...g,
@@ -125,16 +131,30 @@ export function Sidebar({
         className="flex items-center h-[var(--nav-h)] px-3 shrink-0"
         style={{ borderBottom: "1px solid var(--sb-header-border)" }}
       >
-        {showExpanded ? (
+        {!collapsed ? (
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-[var(--radius-lg)] bg-[#0033c9] flex items-center justify-center shrink-0 shadow-sm">
-              <span className="text-white font-bold text-[12px] tracking-tight">ZP</span>
+            {/* ZP square badge */}
+            <div className="w-8 h-8 rounded-[var(--radius-lg)] bg-[rgba(61,114,255,0.15)] border border-[rgba(61,114,255,0.2)] flex items-center justify-center shrink-0">
+              <ZMark />
             </div>
+            {/* Title + subtitle */}
             <div className="min-w-0 flex-1">
-              <div className="text-[13.5px] font-bold text-[var(--sb-logo-text)] leading-none">ZaloPay AI</div>
-              <div className="text-[10.5px] text-[var(--sb-fg)] mt-0.5 leading-none">Creative Platform</div>
+              <div className="flex items-center gap-1.5 leading-none">
+                <img
+                  src="/zalopay-logo-white.png"
+                  alt="ZaloPay"
+                  className="h-[14px] w-auto max-w-[68px] object-contain object-left shrink-0"
+                />
+                <span
+                  className="shrink-0 text-[9px] font-bold tracking-wider px-1.5 py-[2px] rounded-[var(--radius-xs)]"
+                  style={{ background: "linear-gradient(135deg, #0033c9 0%, #00cf6a 100%)", color: "#ffffff" }}
+                >
+                  AI
+                </span>
+              </div>
+              <div className="text-[10px] leading-none mt-0.5 truncate" style={{ color: "var(--sb-fg)" }}>Creative Platform</div>
             </div>
-            {/* Close button — mobile only */}
+            {/* Close button — mobile overlay only */}
             <button
               onClick={onClose}
               className="md:hidden ml-auto shrink-0 flex items-center justify-center w-7 h-7 rounded-[var(--radius-md)] text-[var(--sb-fg)] hover:bg-[var(--sb-item-hover)] hover:text-[var(--sb-fg-active)] transition-colors"
@@ -144,14 +164,20 @@ export function Sidebar({
             </button>
           </div>
         ) : (
-          <div className="mx-auto w-8 h-8 rounded-[var(--radius-lg)] bg-[#0033c9] flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-[12px] tracking-tight">ZP</span>
+          /* Collapsed: gradient icon */
+          <div
+            className="mx-auto w-8 h-8 rounded-[var(--radius-lg)] flex items-center justify-center shadow-sm shrink-0 cursor-pointer"
+            onClick={onToggleCollapse}
+            title="Mở rộng"
+            style={{ background: "linear-gradient(135deg, #0033c9 0%, #00cf6a 100%)" }}
+          >
+            <ZMark fill="#0050e6" />
           </div>
         )}
       </div>
 
-      {/* ── Search ── */}
-      {showExpanded && (
+      {/* ── Search (expanded only) ── */}
+      {!collapsed && (
         <div className="px-3 py-2.5" style={{ borderBottom: "1px solid var(--sb-header-border)" }}>
           <div className="flex items-center gap-2 h-8 px-2.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.07)] focus-within:border-[rgba(61,114,255,0.5)]">
             <Search size={12} strokeWidth={2} className="text-[var(--sb-fg)] shrink-0" />
@@ -174,7 +200,8 @@ export function Sidebar({
       <nav className="sidebar-nav flex-1 overflow-y-auto overflow-x-hidden py-2">
         {filteredGroups.map((group, gi) => (
           <div key={gi}>
-            {group.label && showExpanded && (
+            {/* Group heading — expanded only */}
+            {group.label && !collapsed && (
               <div
                 className="px-5 mb-1 mt-4 first:mt-1 text-[10px] font-semibold uppercase tracking-widest"
                 style={{ color: "var(--sb-group-label)" }}
@@ -182,7 +209,8 @@ export function Sidebar({
                 {group.label}
               </div>
             )}
-            {!showExpanded && gi > 0 && (
+            {/* Divider between groups in collapsed mode */}
+            {collapsed && gi > 0 && (
               <div className="mx-4 my-2 h-px" style={{ background: "var(--sb-divider)" }} />
             )}
             {group.items.map((item) => (
@@ -190,7 +218,7 @@ export function Sidebar({
                 key={item.id}
                 item={item}
                 isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-                collapsed={!showExpanded}
+                collapsed={collapsed}
                 onNavigate={mobileOpen ? onClose : undefined}
               />
             ))}
@@ -207,28 +235,30 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* ── Collapse toggle (desktop only) ── */}
-      <div className="hidden md:block shrink-0 px-3 py-3" style={{ borderTop: "1px solid var(--sb-header-border)" }}>
-        <button
-          onClick={onToggleCollapse}
-          className={`
-            w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)]
-            text-[var(--sb-fg)] hover:bg-[var(--sb-item-hover)] hover:text-[var(--sb-fg-active)]
-            transition-colors duration-150
-            ${!showExpanded ? "justify-center" : ""}
-          `}
-        >
-          {!showExpanded
-            ? <ChevronRight size={15} strokeWidth={2} />
-            : (
-              <>
-                <ChevronLeft size={15} strokeWidth={2} />
-                <span className="text-[12.5px]">Thu gọn</span>
-              </>
-            )
-          }
-        </button>
-      </div>
+      {/* ── Collapse toggle — always visible on desktop, hidden inside mobile overlay ── */}
+      {!mobileOpen && (
+        <div className="shrink-0 px-3 py-3" style={{ borderTop: "1px solid var(--sb-header-border)" }}>
+          <button
+            onClick={onToggleCollapse}
+            className={`
+              w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)]
+              text-[var(--sb-fg)] hover:bg-[var(--sb-item-hover)] hover:text-[var(--sb-fg-active)]
+              transition-colors duration-150
+              ${collapsed ? "justify-center" : ""}
+            `}
+          >
+            {collapsed
+              ? <ChevronRight size={15} strokeWidth={2} />
+              : (
+                <>
+                  <ChevronLeft size={15} strokeWidth={2} />
+                  <span className="text-[12.5px]">Thu gọn</span>
+                </>
+              )
+            }
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

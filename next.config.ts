@@ -11,9 +11,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Ensure brand assets are bundled into serverless/Docker output for AI API routes
   outputFileTracingIncludes: {
-    "/api/analyze":         ["./assets/**/*", "./brand-guideline.json"],
-    "/api/brand-guideline": ["./assets/**/*", "./brand-guideline.json"],
-    "/api/compare":         ["./assets/**/*", "./brand-guideline.json"],
+    "/api/analyze":          ["./assets/**/*", "./brand-guideline.json"],
+    "/api/brand-guideline":  ["./assets/**/*", "./brand-guideline.json"],
+    "/api/compare":          ["./assets/**/*", "./brand-guideline.json"],
+    "/api/generate-banner":  ["./brand-guideline.json"],
   },
 
   // Reduce bundle size for large icon/animation libraries by enabling tree-shaking at build time

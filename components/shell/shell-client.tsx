@@ -63,25 +63,12 @@ function ShellInner({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen, panelOpen]);
 
-  if (!mounted) {
-    return (
-      <div className="shell-root">
-        <div className="h-[var(--nav-h)] bg-[var(--bg-surface-1)] border-b border-[var(--border-default)]" />
-        <div className="shell-body">
-          <div className="app-sidebar" />
-          <main className="app-workspace" />
-          <aside className="app-panel" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      {isOpen && <SearchModal />}
+      {mounted && isOpen && <SearchModal />}
 
       {/* Mobile sidebar backdrop */}
-      {mobileOpen && (
+      {mounted && mobileOpen && (
         <div
           className="fixed inset-0 bg-[var(--bg-overlay)] md:hidden"
           style={{ zIndex: 55 }}
@@ -91,7 +78,7 @@ function ShellInner({ children }: { children: ReactNode }) {
       )}
 
       {/* Tablet/mobile panel backdrop */}
-      {panelOpen && (
+      {mounted && panelOpen && (
         <div
           className="fixed inset-0 bg-[var(--bg-overlay)] lg:hidden"
           style={{ zIndex: 48 }}
@@ -108,7 +95,7 @@ function ShellInner({ children }: { children: ReactNode }) {
         />
         <div className="shell-body">
           <Sidebar
-            collapsed={collapsed}
+            collapsed={mounted ? collapsed : false}
             onToggleCollapse={toggleCollapse}
             mobileOpen={mobileOpen}
             onClose={() => setMobileOpen(false)}

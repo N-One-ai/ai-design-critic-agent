@@ -28,7 +28,6 @@ export default function BrandCheckerPage() {
   const [designName, setDesignName] = useState("");
   const [status, setStatus] = useState<AnalysisStatus>("idle");
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [reportMarkdown, setReportMarkdown] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -46,7 +45,6 @@ export default function BrandCheckerPage() {
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     setResult(null);
-    setReportMarkdown("");
     setError("");
   }, []);
 
@@ -56,7 +54,6 @@ export default function BrandCheckerPage() {
     setStatus("loading");
     setError("");
     setResult(null);
-    setReportMarkdown("");
 
     try {
       const base64 = await fileToBase64(selectedFile);
@@ -92,7 +89,6 @@ export default function BrandCheckerPage() {
       }
 
       setResult(data as unknown as AnalysisResult);
-      setReportMarkdown((data.report as string) || "");
       setStatus("done");
     } catch (err) {
       setError(`Yêu cầu thất bại: ${(err as Error).message}`);
@@ -134,10 +130,10 @@ export default function BrandCheckerPage() {
       previewUrl={previewUrl}
       status={status}
       result={result}
-      reportMarkdown={reportMarkdown}
       error={error}
       isLoading={status === "loading"}
       onFileSelect={handleFileSelect}
+      onRetry={handleAnalyze}
     />
   );
 }
