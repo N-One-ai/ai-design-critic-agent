@@ -109,6 +109,7 @@ function GenerateTab({
   const [result,   setResult]   = useState<ImageGenerateResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const textareaRef             = useRef<HTMLTextAreaElement>(null);
+  const isComposing             = useRef(false);
 
   // ── Textarea auto-resize ──────────────────────────────────────────────────
   const autoResize = useCallback((el: HTMLTextAreaElement) => {
@@ -126,9 +127,24 @@ function GenerateTab({
     if (textareaRef.current) autoResize(textareaRef.current);
   }, [autoResize]);
 
+  // Guard onChange during IME composition — prevents the setPrompt → useEffect
+  // → setCanGenerate → setContent → re-render chain from interrupting Unikey/
+  // EVKey/macOS Vietnamese keyboard composition mid-keystroke.
   function handlePromptChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    if (isComposing.current) return;
     setPrompt(e.target.value);
     autoResize(e.target);
+  }
+
+  function handleCompositionStart() {
+    isComposing.current = true;
+  }
+
+  function handleCompositionEnd(e: React.CompositionEvent<HTMLTextAreaElement>) {
+    isComposing.current = false;
+    const value = e.currentTarget.value;
+    setPrompt(value);
+    autoResize(e.currentTarget);
   }
 
   // Notify parent whenever prompt content changes so the Generate button in
@@ -213,6 +229,8 @@ function GenerateTab({
           ref={textareaRef}
           value={prompt}
           onChange={handlePromptChange}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           placeholder={"Mô tả ý tưởng của bạn...\n\nVí dụ: Thiết kế banner quảng cáo Zalopay với phong cách hiện đại, màu sắc theo Brand Guideline và bố cục phù hợp cho mạng xã hội."}
           className="w-full px-4 py-3 text-[14px] bg-[var(--bg-surface-2)] border border-[var(--border-default)] rounded-[var(--radius-lg)] outline-none resize-none text-[var(--fg-default)] placeholder:text-[var(--fg-subtle)] focus:border-[var(--brand-default)] transition-colors"
         />

@@ -2,11 +2,86 @@
 
 import {
   forwardRef,
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
   type InputHTMLAttributes,
   type TextareaHTMLAttributes,
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/cn";
+
+// ── IME-aware value handler ───────────────────────────────────────────────────
+// Maintains an internal value buffer so React never reconciles the DOM with a
+// stale parent prop during IME composition (Vietnamese Unikey/EVKey/macOS
+// keyboard, CJK, etc.).
+//
+// How it works:
+//   • localValue is the source of truth rendered into the DOM.
+//   • During composition, onChange updates localValue but does NOT call the
+//     parent's onChange — preventing the parent re-render chain that would
+//     reset the in-progress composition.
+//   • On compositionEnd, localValue is set to the final composed text and the
+//     parent's onChange is called once with the result.
+//   • When the parent updates propValue externally (clear, reset), localValue
+//     is synced via useEffect, guarded by isComposing so a live composition
+//     is never clobbered.
+
+function useIMEHandler<T extends HTMLInputElement | HTMLTextAreaElement>(
+  propValue: InputHTMLAttributes<HTMLInputElement>["value"],
+  propOnChange: ((e: React.ChangeEvent<T>) => void) | undefined,
+  propOnCompositionStart: ((e: React.CompositionEvent<T>) => void) | undefined,
+  propOnCompositionEnd: ((e: React.CompositionEvent<T>) => void) | undefined,
+) {
+  const isComposing = useRef(false);
+  const [localValue, setLocalValue] = useState<string | undefined>(
+    propValue !== undefined ? String(propValue) : undefined,
+  );
+
+  // Sync parent → local when parent resets/clears the field externally.
+  useEffect(() => {
+    if (!isComposing.current) {
+      setLocalValue(propValue !== undefined ? String(propValue) : undefined);
+    }
+  }, [propValue]);
+
+  const onChange = useCallback(
+    (e: React.ChangeEvent<T>) => {
+      setLocalValue(e.target.value);
+      if (!isComposing.current) propOnChange?.(e);
+    },
+    [propOnChange],
+  );
+
+  const onCompositionStart = useCallback(
+    (e: React.CompositionEvent<T>) => {
+      isComposing.current = true;
+      propOnCompositionStart?.(e);
+    },
+    [propOnCompositionStart],
+  );
+
+  const onCompositionEnd = useCallback(
+    (e: React.CompositionEvent<T>) => {
+      isComposing.current = false;
+      const finalValue = e.currentTarget.value;
+      setLocalValue(finalValue);
+      propOnCompositionEnd?.(e);
+      if (propOnChange) {
+        propOnChange({
+          ...e,
+          target:        e.currentTarget as T,
+          currentTarget: e.currentTarget as T,
+          type:          "change",
+        } as unknown as React.ChangeEvent<T>);
+      }
+    },
+    [propOnChange, propOnCompositionEnd],
+  );
+
+  return { value: localValue, onChange, onCompositionStart, onCompositionEnd };
+}
 
 /* ─────────────────────────────────────────
    Shared field wrapper
@@ -55,9 +130,17 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, hint, error, prefix, suffix, icon, wrapperClassName, className, ...props },
+  {
+    label, hint, error, prefix, suffix, icon, wrapperClassName, className,
+    value, onChange, onCompositionStart, onCompositionEnd,
+    ...props
+  },
   ref
 ) {
+  const ime = useIMEHandler<HTMLInputElement>(
+    value, onChange, onCompositionStart, onCompositionEnd,
+  );
+
   const hasDecoration = prefix || suffix || icon;
 
   const fieldBase = cn(
@@ -83,6 +166,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       <input
         ref={ref}
         className={cn(fieldBase, !!(prefix || icon) && "pl-9", !!suffix && "pr-9")}
+        {...ime}
         {...props}
       />
       {suffix && (
@@ -92,7 +176,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       )}
     </div>
   ) : (
-    <input ref={ref} className={fieldBase} {...props} />
+    <input ref={ref} className={fieldBase} {...ime} {...props} />
   );
 
   if (!label && !hint && !error) return input;
@@ -121,9 +205,17 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { label, hint, error, wrapperClassName, className, ...props },
+  {
+    label, hint, error, wrapperClassName, className,
+    value, onChange, onCompositionStart, onCompositionEnd,
+    ...props
+  },
   ref
 ) {
+  const ime = useIMEHandler<HTMLTextAreaElement>(
+    value, onChange, onCompositionStart, onCompositionEnd,
+  );
+
   const field = (
     <textarea
       ref={ref}
@@ -139,6 +231,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
           : "border-[var(--border-default)] focus:border-[var(--brand-default)] focus:[box-shadow:var(--input-focus-shadow)]",
         className
       )}
+      {...ime}
       {...props}
     />
   );
@@ -168,7 +261,14 @@ export interface SearchInputProps extends Omit<InputProps, "prefix" | "suffix"> 
 }
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
-  function SearchInput({ onClear, className, value, ...props }, ref) {
+  function SearchInput(
+    { onClear, className, value, onChange, onCompositionStart, onCompositionEnd, ...props },
+    ref
+  ) {
+    const ime = useIMEHandler<HTMLInputElement>(
+      value, onChange, onCompositionStart, onCompositionEnd,
+    );
+
     return (
       <div className="relative flex items-center">
         <span className="absolute left-3 flex items-center text-[var(--fg-subtle)] pointer-events-none">
@@ -176,7 +276,6 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         </span>
         <input
           ref={ref}
-          value={value}
           className={cn(
             "w-full h-9 pl-9 pr-8 text-[13.5px]",
             "bg-[var(--bg-surface-1)] text-[var(--fg-default)]",
@@ -186,9 +285,10 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             "focus:border-[var(--brand-default)] focus:[box-shadow:var(--input-focus-shadow)]",
             className
           )}
+          {...ime}
           {...props}
         />
-        {onClear && value && (
+        {onClear && ime.value && (
           <button
             onClick={onClear}
             className="absolute right-2.5 flex items-center text-[var(--fg-subtle)] hover:text-[var(--fg-default)] transition-colors"
