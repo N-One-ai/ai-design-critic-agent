@@ -67,8 +67,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     "placeholder:text-[var(--fg-subtle)]",
     "disabled:opacity-50 disabled:pointer-events-none",
     error
-      ? "border-[var(--danger-default)] focus:border-[var(--danger-default)] focus:ring-1 focus:ring-[var(--danger-default)]"
-      : "border-[var(--border-default)] focus:border-[var(--brand-default)] focus:ring-1 focus:ring-[var(--brand-default)]",
+      ? "border-[var(--danger-default)] focus:border-[var(--danger-default)] focus:[box-shadow:var(--input-focus-shadow-danger)]"
+      : "border-[var(--border-default)] focus:border-[var(--brand-default)] focus:[box-shadow:var(--input-focus-shadow)]",
     hasDecoration ? "h-9 pl-3 pr-3" : "h-9 px-3",
     className
   );
@@ -135,8 +135,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         "placeholder:text-[var(--fg-subtle)]",
         "disabled:opacity-50 disabled:pointer-events-none",
         error
-          ? "border-[var(--danger-default)] focus:border-[var(--danger-default)] focus:ring-1 focus:ring-[var(--danger-default)]"
-          : "border-[var(--border-default)] focus:border-[var(--brand-default)] focus:ring-1 focus:ring-[var(--brand-default)]",
+          ? "border-[var(--danger-default)] focus:border-[var(--danger-default)] focus:[box-shadow:var(--input-focus-shadow-danger)]"
+          : "border-[var(--border-default)] focus:border-[var(--brand-default)] focus:[box-shadow:var(--input-focus-shadow)]",
         className
       )}
       {...props}
@@ -183,7 +183,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             "border border-[var(--border-default)] rounded-[var(--radius-md)]",
             "outline-none placeholder:text-[var(--fg-subtle)]",
             "transition-[border-color,box-shadow] duration-fast ease-ease",
-            "focus:border-[var(--brand-default)] focus:ring-1 focus:ring-[var(--brand-default)]",
+            "focus:border-[var(--brand-default)] focus:[box-shadow:var(--input-focus-shadow)]",
             className
           )}
           {...props}

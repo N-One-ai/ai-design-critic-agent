@@ -210,6 +210,11 @@
   --prompt-pre-bg:        #f8f9fc;
   --prompt-card-meta-bg:  #f1f3f9;
 
+  /* ── Input focus tokens ── */
+  --input-focus-border:        var(--brand-default);
+  --input-focus-shadow:        0 0 0 3px rgba(37, 99, 235, 0.12);
+  --input-focus-shadow-danger: 0 0 0 3px rgba(220, 38, 38, 0.12);
+
   /* ── Primary Action CTA tokens ── */
   --cta-from:         #3B82F6;
   --cta-via:          #2563EB;
@@ -339,6 +344,10 @@
   --code-bg:             #1a2536;
   --prompt-pre-bg:       #0f1a2e;
   --prompt-card-meta-bg: #1e293b;
+
+  /* ── Input focus tokens (dark) ── */
+  --input-focus-shadow:        0 0 0 3px rgba(59, 130, 246, 0.20);
+  --input-focus-shadow-danger: 0 0 0 3px rgba(239, 68, 68, 0.20);
 }
 
 /* ════════════════════════════════════
@@ -382,11 +391,19 @@ body {
   transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
 }
 
-/* Focus ring — accessible keyboard nav */
-:focus-visible {
+/* Focus ring — keyboard nav only, never on form fields (they manage their own) */
+:focus-visible:not(input, textarea, select, [contenteditable]) {
   outline: 2px solid var(--brand-default);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* Guarantee form elements never show a browser outline — the border+shadow is enough */
+input:focus,
+textarea:focus,
+select:focus,
+[contenteditable]:focus {
+  outline: none;
 }
 
 /* ════════════════════════════════════
