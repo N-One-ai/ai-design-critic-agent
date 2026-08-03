@@ -3,7 +3,7 @@
 import { Target } from "lucide-react";
 import type { BrandGuideline, AnalysisStatus } from "@/lib/types";
 import { Input } from "@/components/ui/input";
-import { GenerateButton } from "@/components/ui/generate-button";
+import { PrimaryActionButton, type CTAState } from "@/components/ui/primary-action-button";
 import { StatusBadge } from "@/components/ui/status-indicator";
 import { PanelSection } from "@/components/ui/card";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
@@ -40,7 +40,10 @@ export function BrandCheckerPanel({
   onDesignNameChange,
   onAnalyze,
 }: BrandCheckerPanelProps) {
-  const isLoading = status === "loading";
+  const ctaState: CTAState =
+    status === "loading" ? "loading" :
+    status === "done"    ? "success" :
+    status === "error"   ? "error"   : "idle";
 
   const colors = brandGuideline?.colors;
   const swatches: { hex: string; label: string }[] = [];
@@ -81,7 +84,7 @@ export function BrandCheckerPanel({
 
               <div>
                 <p className="text-[13px] font-semibold text-[var(--fg-default)]">
-                  {brandGuideline.brandName || "ZaloPay"}
+                  {brandGuideline.brandName || "Zalopay"}
                 </p>
                 {brandGuideline.tone && (
                   <p className="text-[12px] text-[var(--fg-muted)] mt-0.5">
@@ -150,15 +153,13 @@ export function BrandCheckerPanel({
             Tải lên một thiết kế trước để bắt đầu phân tích
           </p>
         )}
-        <GenerateButton
-          fullWidth
-          loading={isLoading}
+        <PrimaryActionButton
+          label="Phân tích ngay"
+          loadingText="Đang phân tích..."
+          ctaState={ctaState}
           disabled={!selectedFile}
           onClick={onAnalyze}
-          icon={<Target size={16} />}
-        >
-          Phân tích ngay
-        </GenerateButton>
+        />
       </div>
     </div>
   );

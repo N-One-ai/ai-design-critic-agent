@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { Image as ImageIcon, Sparkles, X, Upload } from "lucide-react";
+import { Image as ImageIcon, X, Upload } from "lucide-react";
 import { PanelSection } from "@/components/ui/card";
-import { GenerateButton } from "@/components/ui/generate-button";
+import { PrimaryActionButton, type CTAState } from "@/components/ui/primary-action-button";
 import { Badge } from "@/components/ui/badge";
 import { Input, Textarea } from "@/components/ui/input";
 import type { BannerFormValues, BannerStatus } from "@/lib/types";
@@ -57,6 +57,10 @@ export function BannerGeneratorPanel({
 }: BannerGeneratorPanelProps) {
   const refFileInput = useRef<HTMLInputElement>(null);
   const isLoading    = status === "loading";
+  const ctaState: CTAState =
+    status === "loading" ? "loading" :
+    status === "done"    ? "success" :
+    status === "error"   ? "error"   : "idle";
 
   async function handleRefImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -91,7 +95,7 @@ export function BannerGeneratorPanel({
         {/* Campaign objective */}
         <PanelSection title="Mục tiêu chiến dịch *">
           <Textarea
-            placeholder="VD: Tăng tải app ZaloPay dịp Tết, khuyến mãi hoàn tiền 20%..."
+            placeholder="VD: Tăng tải app Zalopay dịp Tết, khuyến mãi hoàn tiền 20%..."
             value={formValues.campaignObjective}
             onChange={(e) => onChange({ campaignObjective: e.target.value })}
             rows={3}
@@ -113,7 +117,7 @@ export function BannerGeneratorPanel({
         <div className="grid grid-cols-2 gap-3">
           <PanelSection title="Thương hiệu">
             <Input
-              placeholder="ZaloPay"
+              placeholder="Zalopay"
               value={formValues.brand}
               onChange={(e) => onChange({ brand: e.target.value })}
               disabled={isLoading}
@@ -240,16 +244,13 @@ export function BannerGeneratorPanel({
 
       {/* ── Generate button ───────────────────────────────────────────── */}
       <div className="px-5 py-4 border-t border-[var(--border-default)] shrink-0">
-        <GenerateButton
-          fullWidth
-          icon={<Sparkles size={15} />}
-          variant="gradient"
-          loading={isLoading}
+        <PrimaryActionButton
+          label="Tạo banner ngay"
+          loadingText="Đang tạo banner..."
+          ctaState={ctaState}
           disabled={!formValues.campaignObjective.trim()}
           onClick={onGenerate}
-        >
-          Tạo banner ngay
-        </GenerateButton>
+        />
       </div>
 
     </div>

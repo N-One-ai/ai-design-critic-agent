@@ -1,8 +1,8 @@
 "use client";
 
-import { Video, Sparkles } from "lucide-react";
+import { Video } from "lucide-react";
 import { PanelSection } from "@/components/ui/card";
-import { GenerateButton } from "@/components/ui/generate-button";
+import { PrimaryActionButton } from "@/components/ui/primary-action-button";
 import { StatusBadge } from "@/components/ui/status-indicator";
 import { Badge } from "@/components/ui/badge";
 
@@ -33,7 +33,7 @@ export function VideoGeneratorPanel() {
 
         <PanelSection title="Script / Mô tả">
           <textarea
-            placeholder="Mô tả nội dung video... VD: Video giới thiệu tính năng mới của ZaloPay, phong cách trẻ trung, năng động, nhấn mạnh sự tiện lợi"
+            placeholder="Mô tả nội dung video... VD: Video giới thiệu tính năng mới của Zalopay, phong cách trẻ trung, năng động, nhấn mạnh sự tiện lợi"
             rows={5}
             className="w-full px-3 py-2.5 text-[13px] bg-[var(--bg-surface-1)] border border-[var(--border-default)] rounded-[var(--radius-md)] outline-none resize-none text-[var(--fg-default)] placeholder:text-[var(--fg-subtle)] focus:border-[var(--brand-default)] transition-colors"
           />
@@ -80,9 +80,7 @@ export function VideoGeneratorPanel() {
       </div>
 
       <div className="px-5 py-4 border-t border-[var(--border-default)] shrink-0">
-        <GenerateButton fullWidth icon={<Sparkles size={15} />} disabled variant="default">
-          Sắp ra mắt
-        </GenerateButton>
+        <PrimaryActionButton label="Tạo video ngay" disabled />
         <p className="text-[11px] text-[var(--fg-subtle)] text-center mt-2">
           Đăng ký nhận thông báo khi tính năng này sẵn sàng
         </p>

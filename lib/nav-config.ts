@@ -67,7 +67,6 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Image Generator",
         href: "/image-generator",
         Icon: Sparkles,
-        badge: "beta",
         description: "Sinh ảnh sáng tạo bằng AI",
       },
       {

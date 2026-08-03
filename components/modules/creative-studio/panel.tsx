@@ -2,7 +2,7 @@
 
 import { Palette, Sparkles } from "lucide-react";
 import { PanelSection } from "@/components/ui/card";
-import { GenerateButton } from "@/components/ui/generate-button";
+import { PrimaryActionButton } from "@/components/ui/primary-action-button";
 import { Badge } from "@/components/ui/badge";
 
 const CANVAS_SIZES = [
@@ -80,9 +80,7 @@ export function CreativeStudioPanel() {
       </div>
 
       <div className="px-5 py-4 border-t border-[var(--border-default)] shrink-0">
-        <GenerateButton fullWidth icon={<Sparkles size={15} />} variant="gradient">
-          AI Enhance
-        </GenerateButton>
+        <PrimaryActionButton label="Tạo thiết kế" />
       </div>
     </div>
   );

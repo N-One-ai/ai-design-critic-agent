@@ -1,8 +1,8 @@
 "use client";
 
-import { PenTool, Sparkles, RefreshCw } from "lucide-react";
+import { PenTool, RefreshCw } from "lucide-react";
 import { PanelSection } from "@/components/ui/card";
-import { GenerateButton } from "@/components/ui/generate-button";
+import { PrimaryActionButton } from "@/components/ui/primary-action-button";
 import { StatusBadge } from "@/components/ui/status-indicator";
 import { Badge } from "@/components/ui/badge";
 
@@ -55,7 +55,7 @@ export function PromptStudioPanel() {
         <PanelSection title="Biến số tùy chỉnh">
           <div className="space-y-2.5">
             {[
-              { label: "Tên thương hiệu", placeholder: "ZaloPay", value: "ZaloPay" },
+              { label: "Tên thương hiệu", placeholder: "Zalopay", value: "Zalopay" },
               { label: "Tone of voice",    placeholder: "Thân thiện, chuyên nghiệp", value: "" },
               { label: "Target audience",  placeholder: "Người dùng 18-35 tuổi",    value: "" },
             ].map(({ label, placeholder }) => (
@@ -88,9 +88,7 @@ export function PromptStudioPanel() {
           <RefreshCw size={13} />
           Tạo lại biến thể
         </button>
-        <GenerateButton fullWidth icon={<Sparkles size={15} />} variant="gradient">
-          Tối ưu prompt
-        </GenerateButton>
+        <PrimaryActionButton label="Tối ưu Prompt" />
       </div>
     </div>
   );

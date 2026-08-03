@@ -4,7 +4,7 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN SYSTEM — TOKEN FOUNDATION
-   ZaloPay AI Creative Platform
+   Zalopay AI Creative Platform
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Typography scales ── */
@@ -81,14 +81,14 @@
   --border-warning: #d97706;
   --border-danger:  #dc2626;
 
-  /* ── Brand (ZaloPay Blue) ── */
+  /* ── Brand (Zalopay Blue) ── */
   --brand-default: #0033c9;
   --brand-hover:   #002aa3;
   --brand-active:  #00228a;
   --brand-subtle:  #eff2ff;
   --brand-fg:      #ffffff;
 
-  /* ── Accent (ZaloPay Green) ── */
+  /* ── Accent (Zalopay Green) ── */
   --accent-default: #00cf6a;
   --accent-hover:   #00b85f;
   --accent-active:  #009e52;
@@ -209,6 +209,17 @@
   --code-bg:              #f1f3f9;
   --prompt-pre-bg:        #f8f9fc;
   --prompt-card-meta-bg:  #f1f3f9;
+
+  /* ── Primary Action CTA tokens ── */
+  --cta-from:         #3B82F6;
+  --cta-via:          #2563EB;
+  --cta-to:           #10B981;
+  --cta-shadow:       0 8px 24px rgba(37, 99, 235, 0.30);
+  --cta-shadow-hover: 0 14px 36px rgba(37, 99, 235, 0.42);
+  --cta-radius:       16px;
+  --cta-height:       45px;
+  --cta-disabled-bg:  #334155;
+  --cta-font:         "Aeonik Pro", "Aeonik", var(--font-sans);
 }
 
 /* ══════════════════════════════════
@@ -376,6 +387,68 @@ body {
   outline: 2px solid var(--brand-default);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* ════════════════════════════════════
+   PRIMARY ACTION CTA BUTTON
+   Single gradient CTA used across all AI modules.
+   Never override these with per-page styles.
+   ════════════════════════════════════ */
+@layer components {
+  .btn-cta {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, var(--cta-from) 0%, var(--cta-via) 50%, var(--cta-to) 100%);
+    box-shadow: var(--cta-shadow);
+    transition:
+      transform     250ms ease,
+      box-shadow    250ms ease,
+      filter        250ms ease,
+      opacity       250ms ease;
+  }
+
+  /* Hover brightened overlay — fades in on hover for "gradient moves" feel */
+  .btn-cta .cta-hover-layer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 50%, #34d399 100%);
+    opacity: 0;
+    transition: opacity 250ms ease;
+    pointer-events: none;
+  }
+
+  .btn-cta:hover:not(:disabled) .cta-hover-layer {
+    opacity: 1;
+  }
+
+  .btn-cta:hover:not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: var(--cta-shadow-hover);
+  }
+
+  .btn-cta:active:not(:disabled) {
+    transform: scale(0.98);
+    transition-duration: 100ms;
+  }
+
+  .btn-cta:disabled {
+    background: var(--cta-disabled-bg) !important;
+    box-shadow: none !important;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Success state */
+  .btn-cta.cta-state-success {
+    background: linear-gradient(90deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  }
+  .btn-cta.cta-state-success .cta-hover-layer { display: none; }
+
+  /* Error state */
+  .btn-cta.cta-state-error {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
+  }
+  .btn-cta.cta-state-error .cta-hover-layer { display: none; }
 }
 
 /* ════════════════════════════════════

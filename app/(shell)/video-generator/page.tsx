@@ -6,12 +6,13 @@ import { useRightPanel } from "@/contexts/right-panel-context";
 import { VideoGeneratorPanel } from "@/components/modules/video-generator/panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PrimaryActionButton } from "@/components/ui/primary-action-button";
 import { Tabs } from "@/components/ui/tabs";
 import { WorkspaceHeader } from "@/components/ui/section";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const SAMPLE_VIDEOS = [
-  { id: "1", title: "ZaloPay Tết 2025 — 30s",  dur: "30s", status: "done",   color: "#e53e3e" },
+  { id: "1", title: "Zalopay Tết 2025 — 30s",  dur: "30s", status: "done",   color: "#e53e3e" },
   { id: "2", title: "Cashback Feature Launch",   dur: "15s", status: "done",   color: "#0033c9" },
   { id: "3", title: "App Download Campaign",     dur: "60s", status: "render", color: "#00cf6a" },
 ];
@@ -108,8 +109,15 @@ export default function VideoGeneratorPage() {
                     placeholder="Nhập script hoặc mô tả nội dung video..."
                     className="w-full px-4 py-3 text-[14px] bg-[var(--bg-surface-2)] border border-[var(--border-default)] rounded-[var(--radius-lg)] outline-none resize-none text-[var(--fg-default)] placeholder:text-[var(--fg-subtle)] focus:border-[var(--brand-default)] transition-colors"
                   />
-                  <div className="mt-3">
-                    <Button variant="primary" disabled icon={<Video size={14} />}>Tạo video (Soon)</Button>
+                  <div className="mt-4">
+                    <PrimaryActionButton
+                      label="Tạo video ngay"
+                      loadingText="Đang tạo video..."
+                      disabled
+                    />
+                    <p className="text-[11px] text-[var(--fg-subtle)] text-center mt-2">
+                      Tính năng sắp ra mắt
+                    </p>
                   </div>
                 </div>
               </div>
