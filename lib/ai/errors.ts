@@ -85,9 +85,15 @@ export class TimeoutError extends AIError {
 }
 
 export class ProviderUnavailableError extends AIError {
-  constructor(provider?: string) {
+  constructor(provider?: string, detail?: string) {
     super(
-      "AI provider is temporarily unavailable.",
+      [
+        "AI provider is temporarily unavailable.",
+        provider && `[${provider}]`,
+        detail && `— ${detail}`,
+      ]
+        .filter(Boolean)
+        .join(" "),
       "PROVIDER_UNAVAILABLE",
       provider,
       true,

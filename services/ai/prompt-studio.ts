@@ -7,7 +7,7 @@
  *
  * Integration steps:
  * 1. Create app/api/prompt/optimize/route.ts
- * 2. Build a system prompt that applies ZaloPay brand guidelines
+ * 2. Build a system prompt that applies Zalopay brand guidelines
  * 3. Return optimized prompt + variants
  * 4. Replace the stub below with the real fetch call
  */

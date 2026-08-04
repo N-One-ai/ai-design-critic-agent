@@ -66,7 +66,7 @@ export default function SettingsPage() {
     <div>
       <WorkspaceHeader
         title="Cài đặt"
-        description="Tuỳ chỉnh tài khoản và nền tảng ZaloPay AI"
+        description="Tuỳ chỉnh tài khoản và nền tảng Zalopay AI"
         icon={<Settings size={18} className="text-[var(--brand-default)]" />}
       />
 
@@ -84,7 +84,7 @@ export default function SettingsPage() {
 
         <div className="pt-2 border-t border-[var(--border-default)]">
           <div className="flex items-center justify-between text-[12px] text-[var(--fg-subtle)]">
-            <span>ZaloPay AI Creative Platform</span>
+            <span>Zalopay AI Creative Platform</span>
             <span>v1.0.0 · Sprint 5</span>
           </div>
         </div>

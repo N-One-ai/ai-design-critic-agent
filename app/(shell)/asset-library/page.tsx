@@ -9,8 +9,8 @@ import { Tabs } from "@/components/ui/tabs";
 import { WorkspaceHeader } from "@/components/ui/section";
 
 const ASSETS = [
-  { id: "1",  name: "ZaloPay Logo Full",        type: "SVG",  size: "12 KB",  cat: "Logo",   color: "#0033c9" },
-  { id: "2",  name: "ZaloPay Logo Mark",         type: "SVG",  size: "8 KB",   cat: "Logo",   color: "#0033c9" },
+  { id: "1",  name: "Zalopay Logo Full",        type: "SVG",  size: "12 KB",  cat: "Logo",   color: "#0033c9" },
+  { id: "2",  name: "Zalopay Logo Mark",         type: "SVG",  size: "8 KB",   cat: "Logo",   color: "#0033c9" },
   { id: "3",  name: "Brand Blue Gradient",       type: "PNG",  size: "240 KB", cat: "Background", color: "#3b5bdb" },
   { id: "4",  name: "Icon Set — Payments",       type: "SVG",  size: "64 KB",  cat: "Icons",  color: "#00cf6a" },
   { id: "5",  name: "Icon Set — Security",       type: "SVG",  size: "48 KB",  cat: "Icons",  color: "#0033c9" },
@@ -69,7 +69,7 @@ export default function AssetLibraryPage() {
     <div>
       <WorkspaceHeader
         title="Asset Library"
-        description="Kho tài nguyên thiết kế đã được kiểm duyệt của ZaloPay"
+        description="Kho tài nguyên thiết kế đã được kiểm duyệt của Zalopay"
         icon={<Archive size={18} className="text-[var(--brand-default)]" />}
         actions={
           <div className="flex items-center gap-2">

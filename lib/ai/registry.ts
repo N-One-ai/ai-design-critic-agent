@@ -12,7 +12,7 @@
  *
  * Usage:
  *   import { AIProviderRegistry } from "@/lib/ai/registry";
- *   import { GeminiProvider }     from "@/lib/ai/providers/gemini";
+ *   import { GeminiProvider }     from "@/lib/ai/provider/gemini";
  *   import { aiProviderConfig }   from "@/lib/config";
  *
  *   AIProviderRegistry.register(new GeminiProvider(aiProviderConfig.gemini));

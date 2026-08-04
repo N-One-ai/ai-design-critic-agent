@@ -166,7 +166,7 @@ function AnalysisTimeline({ isLoading }: { isLoading: boolean }) {
         </div>
         <div>
           <p className="text-[13px] font-semibold text-[var(--fg-default)]">AI đang phân tích</p>
-          <p className="text-[11px] text-[var(--fg-subtle)]">Kiểm tra 7 tiêu chuẩn thương hiệu ZaloPay</p>
+          <p className="text-[11px] text-[var(--fg-subtle)]">Kiểm tra 7 tiêu chuẩn thương hiệu Zalopay</p>
         </div>
       </div>
 
@@ -298,7 +298,7 @@ function ExecutiveReport({
       {/* Score */}
       <div className="flex items-end gap-5 flex-wrap">
         <div className="flex items-baseline gap-1.5 shrink-0">
-          <span className={cn("text-[64px] font-black leading-none tabular-nums", scoreTextColor(score))}>
+          <span className={cn("text-[64px] font-bold leading-none tabular-nums", scoreTextColor(score))}>
             {score ?? "—"}
           </span>
           <span className="text-[20px] text-[var(--fg-subtle)] font-light mb-1">/10</span>
@@ -755,7 +755,7 @@ function UploadHero({ onFileSelect }: { onFileSelect: (file: File) => void }) {
           AI Design Review
         </h1>
         <p className="text-[13.5px] text-[var(--fg-muted)] max-w-sm mx-auto leading-relaxed">
-          Tải thiết kế lên để nhận báo cáo tuân thủ thương hiệu ZaloPay theo 7 tiêu chí.
+          Tải thiết kế lên để nhận báo cáo tuân thủ thương hiệu Zalopay theo 7 tiêu chí.
         </p>
       </div>
 

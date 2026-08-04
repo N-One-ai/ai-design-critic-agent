@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
-import { GeminiProvider } from "@/lib/ai/providers/gemini";
+import { GeminiProvider } from "@/lib/ai/provider/gemini";
 import { ImageAnalysisService } from "@/lib/ai/services/image-analysis";
 import { QuotaExceededError as AIQuotaExceededError, InvalidRequestError } from "@/lib/ai/errors";
 import { aiProviderConfig } from "@/lib/config";

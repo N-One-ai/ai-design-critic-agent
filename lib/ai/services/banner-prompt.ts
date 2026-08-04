@@ -1,36 +1,29 @@
 /**
- * BannerPromptService — generate an optimised Imagen 3 prompt from a high-level
- * banner brief (campaign objective, brand, audience, etc.).
+ * BannerPromptService — converts a banner brief into a hero-only visual scene
+ * description optimised for Higgsfield.
+ *
+ * The generated prompt DESCRIBES ONLY the hero image subject (person, product,
+ * scene, lighting). It explicitly excludes any text, logos, typography, or
+ * layout elements — those are rendered deterministically by the frontend canvas.
  *
  * Provider requirement: "text-generation" (satisfied by GeminiProvider).
- *
- * Step 1 of the two-step banner pipeline:
- *   1. BannerPromptService   — brief → optimised Imagen 3 prompt  (this file)
- *   2. BannerGenerationService — prompt → banner image             (banner-generation.ts)
- *
- * The service sends the brief (and an optional reference image) to Gemini and
- * receives a JSON response with `optimizedPrompt` + `negativePrompt`.
- * If JSON parsing fails, the raw response text is used as the prompt.
  */
 
-import type { GenerateRequest, GenerateResponse, AIContentPart } from "../types";
+import type { GenerateRequest, GenerateResponse } from "../types";
 import { AIService } from "./base";
 import { ParseError } from "../errors";
 import { extractJson } from "@/lib/llm-client";
 
 // ── Input / Output types ──────────────────────────────────────────────────────
 
-export interface BannerPromptInput {
-  campaignObjective: string;
-  promotion?: string;
-  brand?: string;
-  targetAudience?: string;
-  platform?: string;
-  language?: string;
-  visualStyle?: string;
-  dimensions: { width: number; height: number };
-  brandGuideline?: unknown;
-  referenceImageDataUrl?: string;
+export interface BannerHeroInput {
+  campaignName:       string;
+  tagline1:           string;
+  tagline2:           string;
+  product:            string;
+  audience?:          string;
+  heroStyle?:         string;
+  heroPromptOverride?: string;
 }
 
 export interface BannerPromptOutput {
@@ -38,42 +31,46 @@ export interface BannerPromptOutput {
   negativePrompt?: string;
 }
 
+// Legacy alias — kept so any remaining callers still compile
+export type BannerPromptInput = BannerHeroInput;
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
-export class BannerPromptService extends AIService<BannerPromptInput, BannerPromptOutput> {
-  readonly serviceName      = "BannerPromptService";
+export class BannerPromptService extends AIService<BannerHeroInput, BannerPromptOutput> {
+  readonly serviceName        = "BannerPromptService";
   readonly requiredCapability = "text-generation" as const;
 
-  protected buildRequest(input: BannerPromptInput): GenerateRequest {
-    const textContent = buildTextContent(input);
-
-    if (input.referenceImageDataUrl) {
-      const content: AIContentPart[] = [
-        { type: "image", imageDataUrl: input.referenceImageDataUrl },
-        {
-          type: "text",
-          text: `Use the visual style of this reference image as inspiration for the banner design.\n\n${textContent}`,
-        },
-      ];
-      return {
-        messages: [{ role: "user", content }],
-        maxTokens: 1024,
-        temperature: 0.7,
-      };
-    }
+  protected buildRequest(input: BannerHeroInput): GenerateRequest {
+    // If caller supplied an override, skip the LLM entirely — still a valid
+    // GenerateRequest but we'll shortcut in parseResponse.
+    const text = buildHeroPromptInstructions(input);
 
     return {
-      messages: [{ role: "user", content: textContent }],
-      maxTokens: 1024,
-      temperature: 0.7,
+      messages:    [{ role: "user", content: text }],
+      maxTokens:   1024,  // 512 was too low — truncated JSON mid-string
+      temperature: 0.65,
     };
   }
 
   protected parseResponse(
     response: GenerateResponse,
-    _input: BannerPromptInput,
+    input: BannerHeroInput,
   ): BannerPromptOutput {
-    const parsed = extractJson(response.text);
+    // Caller-supplied override bypasses the LLM — return it directly.
+    if (input.heroPromptOverride?.trim()) {
+      return {
+        optimizedPrompt: input.heroPromptOverride.trim(),
+        negativePrompt:  DEFAULT_NEGATIVE,
+      };
+    }
+
+    // extractJson throws on malformed JSON — catch and fall through to raw-text fallback.
+    let parsed: unknown = null;
+    try {
+      parsed = extractJson(response.text);
+    } catch {
+      /* JSON parsing failed; raw text fallback below */
+    }
 
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       const obj = parsed as Record<string, unknown>;
@@ -81,83 +78,113 @@ export class BannerPromptService extends AIService<BannerPromptInput, BannerProm
         return {
           optimizedPrompt: obj.optimizedPrompt.trim(),
           negativePrompt:
-            typeof obj.negativePrompt === "string" ? obj.negativePrompt.trim() : undefined,
+            typeof obj.negativePrompt === "string" ? obj.negativePrompt.trim() : DEFAULT_NEGATIVE,
         };
       }
     }
 
-    // Fallback: use raw response text as the prompt
+    // Fallback: Gemini returned text but not valid JSON — use the raw text as the prompt.
+    // This handles truncated JSON (low maxTokens) and unexpected model formatting.
     const fallback = response.text.trim();
     if (!fallback) throw new ParseError("Empty prompt response from provider", "gemini");
-    return { optimizedPrompt: fallback };
+    return { optimizedPrompt: fallback, negativePrompt: DEFAULT_NEGATIVE };
   }
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const DEFAULT_NEGATIVE =
+  "text in image, logo in image, watermark, typography, words, letters, numbers, " +
+  "UI overlay, HUD, banner layout, brand guidelines overlay, distorted, deformed hands, " +
+  "duplicate subjects, oversaturated, grainy, amateurish, stock photo look, " +
+  "subject in top half of frame, face near top edge, product near top edge, " +
+  "centered subject with no negative space, cluttered top area";
+
+// Style → visual direction mapping
+const STYLE_DIRECTIONS: Record<string, string> = {
+  Modern:
+    "clean modern commercial lifestyle photography, soft natural light, " +
+    "contemporary Vietnamese café or urban setting, warm bokeh background, " +
+    "magazine editorial quality",
+  Festive:
+    "vibrant Vietnamese festive atmosphere, warm golden light, " +
+    "celebratory mood with subtle traditional Vietnamese decorative elements, " +
+    "joyful and aspirational composition",
+  Minimal:
+    "ultra-clean minimalist studio product photography, pure soft-gradient background " +
+    "matching ZaloPay green palette, precise geometric composition, " +
+    "Scandinavian-influenced aesthetics, deliberate negative space",
+  Bold:
+    "dramatic high-contrast commercial photography, dynamic diagonal composition, " +
+    "powerful directional lighting, vibrant energy matching ZaloPay brand palette, " +
+    "cinematic impact",
+  Corporate:
+    "professional Vietnamese business environment, polished editorial quality, " +
+    "trustworthy and aspirational, modern office or business lifestyle setting, " +
+    "neutral sophisticated palette with ZaloPay brand accent colors",
+};
+
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
-function buildTextContent(input: BannerPromptInput): string {
-  const { width, height } = input.dimensions;
-
-  // Extract brand colors from the guideline if present
-  const bg = input.brandGuideline as Record<string, unknown> | undefined;
-  const brandColors: string[] = [];
-  if (bg?.colors) {
-    const c = bg.colors as Record<string, unknown>;
-    const primary   = (c.primary   as { hex?: string } | undefined)?.hex;
-    const secondary = (c.secondary as { hex?: string } | undefined)?.hex;
-    if (primary)   brandColors.push(primary);
-    if (secondary) brandColors.push(secondary);
-  }
-  const paletteHint = brandColors.length
-    ? brandColors.join(", ")
-    : "#0033C9 (deep blue), #00CF6A (vibrant green), white";
+function buildHeroPromptInstructions(input: BannerHeroInput): string {
+  const styleDirection =
+    (input.heroStyle && STYLE_DIRECTIONS[input.heroStyle]) ??
+    STYLE_DIRECTIONS["Modern"];
 
   const lines: string[] = [
-    "You are an expert visual art director and advertising photographer specializing in Vietnamese fintech brands.",
-    "Your task: write ONE detailed scene description that will be used as an AI image generation prompt",
-    "for a ZaloPay advertising banner. The image will be generated by a commercial-grade AI image model.",
+    "You are a senior visual art director specialising in Vietnamese fintech advertising.",
     "",
-    "ZALOPAY BRAND CONTEXT (inject automatically into every prompt):",
-    `- Brand colors: ${paletteHint}`,
-    "- Brand essence: modern, trustworthy, convenient Vietnamese digital payments",
-    "- Visual identity: clean compositions, premium lifestyle photography, warm Vietnamese context",
-    "- Mandatory visual elements: ZaloPay brand colors visible in scene (clothing, props, UI, backgrounds)",
-    "- People: young Vietnamese urban professionals, age 20–35, modern city lifestyle",
-    "- Phone/device: modern smartphone prominently featured displaying ZaloPay payment UI",
-    "- Photography quality: premium commercial advertising, magazine cover quality, soft natural bokeh",
+    "Your task: write ONE concise visual scene description for an AI image generator.",
+    "This image will be the HERO of a ZaloPay advertising banner.",
     "",
-    "ADVERTISING CAMPAIGN BRIEF:",
-    `- Campaign objective: ${input.campaignObjective}`,
+    "CRITICAL CONSTRAINTS — the following must NEVER appear in the prompt:",
+    "  - No text, words, letters, numbers, or typography of any kind",
+    "  - No logos, brand marks, watermarks, or symbols",
+    "  - No UI overlays, labels, banner layout, or graphic design elements",
+    "  - No quality descriptors (8K, photorealistic, HDR)",
+    "  - No aspect ratio or canvas size — the pipeline handles those",
+    "",
+    "Why: text, logos, and taglines are rendered deterministically by the frontend.",
+    "The AI must generate ONLY the visual scene — a human subject, product, environment, light.",
+    "",
+    "HERO BRIEF:",
+    `  Product / Subject : ${input.product}`,
   ];
 
-  if (input.promotion?.trim())      lines.push(`- Promotion / offer: ${input.promotion}`);
-  if (input.brand?.trim())          lines.push(`- Brand: ${input.brand}`);
-  if (input.targetAudience?.trim()) lines.push(`- Target audience: ${input.targetAudience}`);
-  if (input.platform?.trim())       lines.push(`- Platform: ${input.platform}`);
-  if (input.language)               lines.push(`- Language context: ${input.language === "vi" ? "Vietnamese — Vietnam setting, Vietnamese faces" : "English — international urban setting"}`);
-  if (input.visualStyle?.trim())    lines.push(`- Visual style direction: ${input.visualStyle}`);
-  if (bg?.brandName)                lines.push(`- Featured brand: ${String(bg.brandName)}`);
+  if (input.campaignName?.trim()) lines.push(`  Campaign          : ${input.campaignName}`);
+  if (input.audience?.trim())     lines.push(`  Target audience   : ${input.audience}`);
+  if (input.tagline1?.trim())     lines.push(`  Tagline 1 context : ${input.tagline1} (DON'T render — visual context only)`);
+  if (input.tagline2?.trim())     lines.push(`  Tagline 2 context : ${input.tagline2} (DON'T render — visual context only)`);
 
   lines.push(
-    `- Canvas dimensions: ${width}×${height}px`,
     "",
-    "COMPOSITION REQUIREMENTS:",
-    "- Clear visual hierarchy: one dominant hero subject, supporting environmental context",
-    "- Natural breathing space on sides and bottom for text overlay (CTA button area)",
-    "- Warm, aspirational lighting — golden hour, soft window light, or studio-quality ambient",
-    "- ZaloPay app UI visible on device screen showing a successful payment or transaction",
-    "- Vietnamese street scenes, modern cafes, homes, or lifestyle settings as environment",
-    "- Avoid: text in scene, logos, watermarks, overly staged corporate look",
+    "VISUAL DIRECTION:",
+    `  Style: ${styleDirection}`,
     "",
-    "OUTPUT RULES:",
-    "- Write ONLY a pure visual scene description in English",
-    "- Do NOT include quality descriptors (4K, photorealistic, HD) — those are added automatically",
-    "- Do NOT include aspect ratio or canvas size — those are handled by the pipeline",
-    "- Do NOT include negative prompts in optimizedPrompt",
-    "- Keep the optimizedPrompt under 180 words",
+    "ZALOPAY BRAND ESSENCE (inject naturally — not as props or labels):",
+    "  - Brand colours: #0033C9 (deep blue), #00CF6A (vibrant green)",
+    "  - Young Vietnamese urban professionals, age 20–35, modern city lifestyle",
+    "  - Modern smartphone prominently visible if it fits the scene (ZaloPay app on screen)",
+    "  - Premium commercial advertising photography, magazine cover quality",
+    "  - Vietnamese street scenes, modern cafés, homes, or lifestyle settings",
     "",
-    "Return ONLY a JSON object — no markdown fences, no explanation:",
-    `{"optimizedPrompt": "…pure visual scene description…", "negativePrompt": "blurry, distorted text, watermark, ugly composition, amateurish, grainy, oversaturated, deformed hands, duplicate elements"}`,
+    "COMPOSITION — CRITICAL for full-canvas key visual layout:",
+    "  - This image fills the ENTIRE 1200×1200 square banner as a full-bleed background.",
+    "  - The TOP 40–45% of the frame is covered by a brand green gradient overlay",
+    "    (logo + taglines rendered on top). Place ONLY negative space, open sky,",
+    "    soft backgrounds, or shallow depth-of-field blur in the top 40%.",
+    "  - NEVER place faces, product details, hands, or focal subjects in the top 40%.",
+    "  - Place the PRIMARY SUBJECT (person, product, scene focus) in the lower 55–65%.",
+    "  - Centre the subject horizontally — the image is cropped from a 16:9 frame to",
+    "    a 1:1 square by taking the centre portion; off-centre subjects will be clipped.",
+    "  - Use generous depth-of-field: a soft, slightly blurred background in the upper",
+    "    portion creates a natural transition into the green overlay.",
+    "  - Background colour in the upper portion should complement ZaloPay green",
+    "    (#00CF6A → #009A50) — avoid pure white or very bright colours at the top",
+    "    as this will require stronger overlay and reduce the hero reveal effect.",
+    "",
+    "OUTPUT: Return ONLY a valid JSON object — no markdown fences, no commentary:",
+    `{"optimizedPrompt": "…pure visual scene description, max 150 words…", "negativePrompt": "${DEFAULT_NEGATIVE}"}`,
   );
 
   return lines.join("\n");

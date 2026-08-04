@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   ZaloPay AI Creative Platform — UI Component Library
+   Zalopay AI Creative Platform — UI Component Library
    ═══════════════════════════════════════════════════════ */
 
 /* Buttons */

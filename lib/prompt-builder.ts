@@ -32,9 +32,9 @@ const RESPONSE_SCHEMA_EXAMPLE = {
     logoCompliance: {
       score: "number 0-10, or null if no logo reference/guideline was provided",
       detectedBrand:
-        "string - the brand the detected logo belongs to: 'ZaloPay', 'Lazada', 'Shopee', 'Tiki', 'MoMo', 'Merchant', 'Partner', 'Unknown', or null if no logo is present",
+        "string - the brand the detected logo belongs to: 'Zalopay', 'Lazada', 'Shopee', 'Tiki', 'MoMo', 'Merchant', 'Partner', 'Unknown', or null if no logo is present",
       logoVersion:
-        "string - one of five values: 'Current Official Logo' (matches the official reference asset — PASS); 'Deprecated' (matches or closely resembles one of the deprecated logo assets — FAIL); 'Old Logo Version' (belongs to ZaloPay but is outdated/legacy and does not match any provided reference — FAIL); 'Modified Logo' (appears to be ZaloPay but altered, distorted, recreated, or AI-generated — FAIL); 'Unknown Logo' (cannot determine version with high confidence — FAIL). null if no ZaloPay logo is detected",
+        "string - one of five values: 'Current Official Logo' (matches the official reference asset — PASS); 'Deprecated' (matches or closely resembles one of the deprecated logo assets — FAIL); 'Old Logo Version' (belongs to Zalopay but is outdated/legacy and does not match any provided reference — FAIL); 'Modified Logo' (appears to be Zalopay but altered, distorted, recreated, or AI-generated — FAIL); 'Unknown Logo' (cannot determine version with high confidence — FAIL). null if no Zalopay logo is detected",
       reason:
         "string - required whenever correctLogo is false. State what was found and why it fails. Empty string when correctLogo is true.",
       typographyMatch: {
@@ -54,7 +54,7 @@ const RESPONSE_SCHEMA_EXAMPLE = {
       checks: {
         logoPresent: "boolean - is any logo visible in the design",
         correctBrand:
-          "boolean - true if the detected logo belongs to ZaloPay, regardless of version",
+          "boolean - true if the detected logo belongs to Zalopay, regardless of version",
         correctLogo:
           "boolean - true ONLY if the detected logo matches assets/logo-current.png (the sole official reference)",
         approvedVersion: "boolean - must always equal correctLogo",
@@ -190,7 +190,7 @@ export function buildMessages(params: BuildMessagesParams): Message[] {
   const systemPrompt = `You are a senior design critic with 15+ years of experience across UI/UX, branding, advertising creative, and conversion rate optimization.
 You will be shown a design image (e.g. an ad banner, landing page, or marketing asset) and must evaluate it across the following categories:
 
-- logoCompliance: a strict logo compliance audit. Only the current official ZaloPay logo may pass. Any deprecated, outdated, or unrecognised logo version must always fail — regardless of whether the text reads "ZaloPay".
+- logoCompliance: a strict logo compliance audit. Only the current official Zalopay logo may pass. Any deprecated, outdated, or unrecognised logo version must always fail — regardless of whether the text reads "Zalopay".
 
   STEP 1 — DETECT LOGOS: Scan the entire design and identify every logo present. Set "logoPresent" to true if any logo is visible. If multiple logos are detected, focus evaluation on the most prominent one and note others in "conclusion".
 
@@ -199,16 +199,16 @@ You will be shown a design image (e.g. an ad banner, landing page, or marketing 
 
   If the detected logo matches or closely resembles any deprecated logo image:
   — STOP. Do not evaluate further.
-  — Set: detectedBrand = "ZaloPay", correctBrand = true, logoVersion = "Deprecated"
+  — Set: detectedBrand = "Zalopay", correctBrand = true, logoVersion = "Deprecated"
   — Set: correctLogo = false, approvedVersion = false, score = 0
   — Set: notDistorted = false, correctColors = false, correctPosition = false, sufficientProminence = false
-  — Set: reason = "Deprecated ZaloPay logo detected. Current Brand Guideline requires the latest official logo version."
+  — Set: reason = "Deprecated Zalopay logo detected. Current Brand Guideline requires the latest official logo version."
   — This result is FINAL. correctLogo must remain false. approvedVersion must remain false.
   — A deprecated logo can NEVER receive correctLogo = true, approvedVersion = true, or a passing score.
 
   How to identify a DEPRECATED logo (visual fingerprints — match ANY of these):
   — Overall composition: "Zalo" as a standalone blue wordmark + "Pay" inside a separate green rounded-rectangle block. Any logo with this two-part split structure is deprecated.
-  — "Pay" (capital P) appears in WHITE text placed INSIDE a GREEN rounded rectangle or pill shape. If any part of the ZaloPay wordmark sits inside a coloured background shape, it is deprecated.
+  — "Pay" (capital P) appears in WHITE text placed INSIDE a GREEN rounded rectangle or pill shape. If any part of the Zalopay wordmark sits inside a coloured background shape, it is deprecated.
   — Typeface: extremely rounded, bubbly, inflated letterforms with uniform thick strokes throughout — like bubble letters. The letters look soft and playful, not geometric or structured.
   — Specific letterform tells of the deprecated font: Z has rounded/blunt horizontal stroke terminals; a is a double-storey form with an very round, closed bowl; l has a ball terminal at the top; o is a near-perfect circle with uniform stroke width; P has a large round bowl; y has a curved descender.
   — Colour: "Zalo" is in a bright vivid electric blue (lighter and more saturated than the dark navy blue of the current logo). The green rectangle is a vibrant mid-green.
@@ -239,11 +239,11 @@ You will be shown a design image (e.g. an ad banner, landing page, or marketing 
   — Set: correctLogo = false, approvedVersion = false, score = 0
   — Set: notDistorted = false, correctColors = false, correctPosition = false, sufficientProminence = false
   — Set logoVersion and reason:
-      · "Old Logo Version" — recognisably ZaloPay but outdated. reason = "Old ZaloPay logo detected. Current Brand Guideline requires the latest official logo version."
-      · "Modified Logo" — appears altered, distorted, recreated, or AI-generated. reason = "Modified ZaloPay logo detected — unauthorized alteration is not permitted."
+      · "Old Logo Version" — recognisably Zalopay but outdated. reason = "Old Zalopay logo detected. Current Brand Guideline requires the latest official logo version."
+      · "Modified Logo" — appears altered, distorted, recreated, or AI-generated. reason = "Modified Zalopay logo detected — unauthorized alteration is not permitted."
       · "Unknown Logo" — cannot verify. reason = "Logo version could not be verified with high confidence against the official reference assets."
 
-  STEP 4 — IDENTIFY BRAND: Set "detectedBrand" to the brand of the detected logo: "ZaloPay", "Lazada", "Shopee", "Tiki", "MoMo", "Merchant", "Partner", "Unknown", or null. Set "correctBrand" = true only if detectedBrand is "ZaloPay". If no logo found, set all checks to false and score = 0.
+  STEP 4 — IDENTIFY BRAND: Set "detectedBrand" to the brand of the detected logo: "Zalopay", "Lazada", "Shopee", "Tiki", "MoMo", "Merchant", "Partner", "Unknown", or null. Set "correctBrand" = true only if detectedBrand is "Zalopay". If no logo found, set all checks to false and score = 0.
 
   TYPOGRAPHY VALIDATION (applies in Step 3 only): Compare each character of the wordmark against the official reference. The current official logo uses a geometric modern sans-serif (Aeonik Pro) — structured, wide, and clean. The deprecated logo uses an entirely different font with bubbly, rounded, inflated letterforms. Any sign of the rounded bubbly font means the logo is deprecated.
 
@@ -254,7 +254,7 @@ You will be shown a design image (e.g. an ad banner, landing page, or marketing 
   — o: current = geometric oval with controlled stroke contrast; deprecated = near-perfect circle, uniform stroke weight throughout
   — P: current = proportionate bowl with clean attachment; deprecated = very large round bowl, heavy uniform stroke
   — y: current = angular arm and clean descender; deprecated = rounded arm join, curved/soft descender
-  — Casing check: current logo uses "pay" (all lowercase); deprecated uses "Pay" (capital P). A capital P in the ZaloPay wordmark is an immediate indicator of a deprecated logo.
+  — Casing check: current logo uses "pay" (all lowercase); deprecated uses "Pay" (capital P). A capital P in the Zalopay wordmark is an immediate indicator of a deprecated logo.
 
   Set "typographyMatch.overall" to true ONLY if every character matches the current official font. Any sign of rounded/bubbly letterforms, a ball terminal on the 'l', a capital 'P', or a green background block → typographyMatch.overall = false, logoVersion = "Deprecated" or "Old Logo Version", correctLogo = false.
 

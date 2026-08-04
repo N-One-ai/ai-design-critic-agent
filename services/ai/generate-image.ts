@@ -1,26 +1,47 @@
 /**
- * AI Image Generation Service — extension point.
+ * Image generation service — client-side.
  *
- * CURRENT: Not implemented (returns a "not available" stub).
- * FUTURE:  Integrate Google Imagen 3 (or similar) by implementing the
- *          POST /api/generate/image route and wiring it below.
- *
- * Integration steps:
- * 1. Create app/api/generate/image/route.ts
- * 2. Add IMAGEN_API_KEY to .env
- * 3. Implement generateImageFromPrompt() using @google/generative-ai
- * 4. Replace the stub below with the real fetch call
+ * Thin fetch wrapper over POST /api/image/generate.
+ * Translates the AIServiceResult shape consumed by frontend components.
  */
 
 import type { AIServiceResult, ImageGenerationInput, ImageGenerationOutput } from "./types";
 
 export async function generateImage(
-  input: ImageGenerationInput
+  input: ImageGenerationInput,
 ): Promise<AIServiceResult<ImageGenerationOutput>> {
-  // TODO: Replace stub with real Imagen 3 API call
-  void input;
-  return {
-    status: "error",
-    error: "Image generation is not yet available. Check back soon.",
-  };
+  try {
+    const res = await fetch("/api/image/generate", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        prompt:      input.prompt,
+        style:       input.style,
+        aspectRatio: input.aspectRatio,
+        quality:     input.quality === "high" ? "hd" : input.quality,
+      }),
+    });
+
+    const data = await res.json() as { success: boolean; error?: string; imageUrl?: string; metadata?: { storagePath?: string } };
+
+    if (!res.ok || !data.success) {
+      if (res.status === 429) {
+        return { status: "quota_exceeded", error: data.error ?? "Quota tạo ảnh đã hết." };
+      }
+      return { status: "error", error: data.error ?? "Tạo ảnh thất bại." };
+    }
+
+    return {
+      status: "success",
+      data: {
+        imageUrl:     data.imageUrl!,
+        generationId: data.metadata?.storagePath ?? `gen-${Date.now()}`,
+      },
+    };
+  } catch (e) {
+    return {
+      status: "error",
+      error:  (e as Error)?.message ?? "Kết nối thất bại. Vui lòng thử lại.",
+    };
+  }
 }

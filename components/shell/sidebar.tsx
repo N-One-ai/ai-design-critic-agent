@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { NAV_GROUPS, type NavItem, type NavBadge } from "@/lib/nav-config";
 
-/* ─── ZaloPay Trademark Z ─── */
+/* ─── Zalopay Trademark Z ─── */
 function ZMark({ fill = "#0050e6" }: { fill?: string }) {
   return (
     <svg width="14" height="16" viewBox="0 0 310.91 358.18" fill="none" aria-hidden="true">
@@ -142,7 +142,7 @@ export function Sidebar({
               <div className="flex items-center gap-1.5 leading-none">
                 <img
                   src="/zalopay-logo-white.png"
-                  alt="ZaloPay"
+                  alt="Zalopay"
                   className="h-[14px] w-auto max-w-[68px] object-contain object-left shrink-0"
                 />
                 <span

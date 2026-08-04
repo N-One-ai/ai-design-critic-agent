@@ -11,7 +11,7 @@ import { WorkspaceHeader } from "@/components/ui/section";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const LIBRARY_PROMPTS = [
-  { id: "1", title: "ZaloPay Hero Banner",    cat: "Marketing",   uses: 142, model: "Gemini" },
+  { id: "1", title: "Zalopay Hero Banner",    cat: "Marketing",   uses: 142, model: "Gemini" },
   { id: "2", title: "Flash Sale Copy",         cat: "Ad Copy",     uses: 98,  model: "Claude" },
   { id: "3", title: "Feature Announcement",    cat: "Social Media",uses: 76,  model: "Gemini" },
   { id: "4", title: "Cashback Promotion",      cat: "Marketing",   uses: 64,  model: "GPT-4o" },
@@ -58,7 +58,7 @@ export default function PromptStudioPage() {
     <div>
       <WorkspaceHeader
         title="Prompt Studio"
-        description="Thư viện prompt AI tối ưu cho nội dung ZaloPay"
+        description="Thư viện prompt AI tối ưu cho nội dung Zalopay"
         icon={<PenTool size={18} className="text-[#06b6d4]" />}
         badge={<Badge variant="accent" size="sm">New</Badge>}
         actions={

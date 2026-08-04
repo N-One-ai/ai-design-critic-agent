@@ -79,7 +79,7 @@ function TypeSpecimen({ name, className, sample }: { name: string; className: st
   return (
     <div className="flex items-baseline gap-6 py-2 border-b border-[var(--border-subtle)] last:border-0">
       <code className="text-[11px] text-[var(--fg-subtle)] font-mono w-28 shrink-0">{name}</code>
-      <span className={className}>{sample ?? "ZaloPay AI Creative Platform"}</span>
+      <span className={className}>{sample ?? "Zalopay AI Creative Platform"}</span>
     </div>
   );
 }
@@ -102,7 +102,7 @@ export default function DesignSystemPage() {
           Design System
         </h1>
         <p className="text-[15px] text-[var(--fg-muted)] max-w-xl">
-          A complete enterprise UI component library and token system for the ZaloPay AI Creative Platform.
+          A complete enterprise UI component library and token system for the Zalopay AI Creative Platform.
           Every module must use these components — never implement styles independently.
         </p>
       </div>
@@ -205,7 +205,7 @@ export default function DesignSystemPage() {
           <Card variant="default">
             <CardHeader action={<Badge variant="success">Live</Badge>}>
               <CardTitle>Brand Checker</CardTitle>
-              <CardDescription>Kiểm tra tuân thủ thương hiệu ZaloPay</CardDescription>
+              <CardDescription>Kiểm tra tuân thủ thương hiệu Zalopay</CardDescription>
             </CardHeader>
             <CardContent>
               <ProgressBar value={78} showValue label="Compliance score" />
@@ -295,7 +295,7 @@ export default function DesignSystemPage() {
             <Badge variant="primary" dot>Active</Badge>
           </Preview>
           <Preview label="Tag (removable)">
-            <Tag variant="primary" onRemove={() => {}}>ZaloPay Blue</Tag>
+            <Tag variant="primary" onRemove={() => {}}>Zalopay Blue</Tag>
             <Tag variant="accent" onRemove={() => {}}>AI Generated</Tag>
             <Tag variant="default" onRemove={() => {}}>Draft</Tag>
           </Preview>
@@ -356,7 +356,7 @@ export default function DesignSystemPage() {
             Quy chuẩn thương hiệu đã được tải lên thành công.
           </Alert>
           <Alert variant="success" title="Phân tích hoàn thành">
-            Thiết kế đạt 8.5/10 điểm tuân thủ thương hiệu ZaloPay.
+            Thiết kế đạt 8.5/10 điểm tuân thủ thương hiệu Zalopay.
           </Alert>
           <Alert variant="warning" title="Cảnh báo">
             Màu sắc sử dụng không đúng tỷ lệ theo brand guideline.
@@ -671,7 +671,7 @@ export default function DesignSystemPage() {
 
       <div className="py-8 text-center">
         <p className="text-[12px] text-[var(--fg-subtle)]">
-          ZaloPay AI Creative Platform · Design System v1.0 · Sprint 4
+          Zalopay AI Creative Platform · Design System v1.0 · Sprint 4
         </p>
       </div>
     </div>

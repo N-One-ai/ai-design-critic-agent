@@ -19,7 +19,7 @@ const HISTORY_ITEMS = [
   {
     id: "2",
     type: "image",    icon: Sparkles,   color: "#6366f1",
-    title: "ZaloPay hero image — blue gradient",
+    title: "Zalopay hero image — blue gradient",
     module: "Image Generator",
     time: "45 phút trước",
     status: "done",
@@ -35,7 +35,7 @@ const HISTORY_ITEMS = [
   {
     id: "4",
     type: "video",    icon: Video,      color: "#8b5cf6",
-    title: "ZaloPay x VinFast — 30s video",
+    title: "Zalopay x VinFast — 30s video",
     module: "Video Generator",
     time: "Hôm qua, 15:30",
     status: "done",
@@ -114,7 +114,7 @@ export default function HistoryPage() {
     <div>
       <WorkspaceHeader
         title="Lịch sử"
-        description="Toàn bộ tác phẩm đã tạo trên ZaloPay AI Platform"
+        description="Toàn bộ tác phẩm đã tạo trên Zalopay AI Platform"
         icon={<Clock size={18} className="text-[var(--brand-default)]" />}
       />
 

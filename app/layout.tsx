@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "ZaloPay AI Creative Platform",
-  description: "AI-powered creative workspace for ZaloPay brand compliance and design generation",
+  title: "Zalopay AI Creative Platform",
+  description: "AI-powered creative workspace for Zalopay brand compliance and design generation",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

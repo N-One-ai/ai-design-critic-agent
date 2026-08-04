@@ -153,6 +153,32 @@ export type AnalysisStatus = "idle" | "loading" | "done" | "error";
 
 // ── Banner Generator ──────────────────────────────────────────────────────────
 
+export type BannerHeroStyle    = "Modern" | "Minimal" | "Bold" | "Festive" | "Corporate";
+export type BannerTaglineAlign = "left" | "center" | "right";
+export type HeroMaskStyle      = "RoundedRect" | "SoftOrganic" | "WaveBottom" | "LargeRadiusCard";
+/** Official Zalopay logo variants. Extend in lib/assets/logo-assets.ts. */
+export type LogoVariant        = "primary" | "white";
+
+export interface BannerTemplateValues {
+  tagline1: string;           // Label rendered in blue pill
+  tagline2: string;           // Main headline — use \n for line break (max 2 lines)
+  campaignName: string;       // Campaign context for AI prompt
+  product: string;            // Hero subject — what to generate
+  audience: string;           // Target audience context for AI prompt
+  heroStyle: BannerHeroStyle;
+  heroPromptOverride: string; // Optional: bypass AI prompt builder
+  // Typography overrides — undefined means "use brand default"
+  t1FontSize?:       number;               // Tagline 1 font size (default: 32, range: 20–48)
+  t2FontSize?:       number;               // Tagline 2 font size (default: 80, range: 48–120)
+  t1TextTransform?:  "none" | "uppercase"; // default: "none" (preserve input as-is)
+  t1Align?:          BannerTaglineAlign;   // default: "center"
+  t2Align?:          BannerTaglineAlign;   // default: "center"
+  heroMaskStyle?:    HeroMaskStyle;        // default: "RoundedRect"
+  heroBlend?:        number;               // 0–100, default: 40
+  logoVariant?:      LogoVariant;          // default: "white"
+}
+
+// Legacy — kept so old localStorage history items still deserialise cleanly
 export interface BannerFormValues {
   campaignObjective: string;
   promotion: string;
@@ -167,10 +193,26 @@ export interface BannerFormValues {
 
 export interface BannerResult {
   generationId: string;
-  imageDataUrl: string;
-  prompt: string;
+  imageDataUrl: string;       // Full composite banner from canvas export
+  heroImageUrl?: string;      // AI-generated hero image URL
+  prompt: string;             // Prompt used for hero generation
   negativePrompt?: string;
   dimensions: { width: number; height: number };
+  // Template fields
+  tagline1?: string;
+  tagline2?: string;
+  campaignName?: string;
+  product?: string;
+  heroStyle?: string;
+  // Hero image transform (canvas-space pixels / scale factor)
+  heroOffsetX?: number;
+  heroOffsetY?: number;
+  heroScale?:   number;
+  // Hero blend effect (0–100)
+  heroBlend?:   number;
+  // Logo variant
+  logoVariant?: LogoVariant;
+  // Legacy fields — kept for old history items
   platform?: string;
   visualStyle?: string;
   campaignObjective?: string;

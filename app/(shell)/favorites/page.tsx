@@ -19,7 +19,7 @@ const FAVORITES = [
   {
     id: "2",
     type: "image",  icon: Sparkles,  color: "#6366f1",
-    title: "ZaloPay Hero — Blue Sky",
+    title: "Zalopay Hero — Blue Sky",
     module: "Image Generator",  time: "3 ngày trước",
   },
   {

@@ -1,11 +1,11 @@
 /**
- * BannerGenerationService — generate brand-compliant banner images via Imagen 3.
+ * BannerGenerationService — generate brand-compliant banner images via Gemini Image.
  *
  * Provider requirement: "image-generation"
- * Default provider: ImagenProvider (imagen-3.0-generate-001)
+ * Default provider: GoogleImageProvider (gemini-3-pro-image)
  *
  * Usage:
- *   AIProviderRegistry.register(new ImagenProvider(aiProviderConfig.imagen));
+ *   AIProviderRegistry.register(new GoogleImageProvider(aiProviderConfig.googleImage));
  *   const service = new BannerGenerationService(AIProviderRegistry.getCapable("image-generation"));
  *   const result = await service.execute({ prompt, dimensions, brandColors });
  *   // result.imageUrl is a data URL ready for <img src> or storage upload

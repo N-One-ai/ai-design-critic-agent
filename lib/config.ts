@@ -56,13 +56,24 @@ export const aiProviderConfig: Record<string, ProviderConfig> = {
     maxRetries:     parseMs(process.env.CLAUDE_MAX_RETRIES, 3),
   },
 
-  // Imagen 3 reuses the same GEMINI_API_KEY — no separate credential needed.
-  imagen: {
-    apiKey:         process.env.GEMINI_API_KEY         ?? "",
-    model:          process.env.IMAGEN_MODEL           ?? "gemini-3.1-flash-image-preview",
-    fallbackModels: parseList(process.env.IMAGEN_FALLBACK_MODELS, "gemini-3.1-flash-image"),
-    timeoutMs:      parseMs(process.env.IMAGEN_TIMEOUT_MS, 60_000),
-    maxRetries:     parseMs(process.env.IMAGEN_MAX_RETRIES, 2),
+  // Google Image provider — kept for banner generation (generate-banner route).
+  googleImage: {
+    apiKey:         process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY ?? "",
+    model:          process.env.GOOGLE_IMAGE_MODEL ?? "gemini-3-pro-image",
+    fallbackModels: parseList(process.env.GOOGLE_IMAGE_FALLBACK_MODELS, "gemini-3-pro-image"),
+    timeoutMs:      parseMs(process.env.GOOGLE_IMAGE_TIMEOUT_MS, 90_000),
+    maxRetries:     parseMs(process.env.GOOGLE_IMAGE_MAX_RETRIES, 2),
+  },
+
+  // Higgsfield CLI provider — image generation via the `higgsfield` CLI binary.
+  // No API key needed; auth lives in the CLI session (~/.higgsfield).
+  // Run: higgsfield auth login && higgsfield workspace set <id>
+  higgsfield: {
+    apiKey:         "",
+    model:          process.env.HIGGSFIELD_MODEL ?? "nano-banana-pro",
+    fallbackModels: parseList(process.env.HIGGSFIELD_FALLBACK_MODELS, "nano-banana-2"),
+    timeoutMs:      parseMs(process.env.HIGGSFIELD_TIMEOUT_MS, 110_000),
+    maxRetries:     parseMs(process.env.HIGGSFIELD_MAX_RETRIES, 1),
   },
 };
 

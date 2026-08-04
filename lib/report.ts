@@ -32,7 +32,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const LOGO_CHECK_LABELS: Record<string, string> = {
   logoPresent: "Phát hiện logo",
   correctBrand: "Đúng thương hiệu",
-  correctLogo: "Logo ZaloPay chính thức",
+  correctLogo: "Logo Zalopay chính thức",
   approvedVersion: "Phiên bản được chấp thuận",
   notDistorted: "Không bị biến dạng",
   correctColors: "Không đổi màu trái phép",
@@ -80,8 +80,8 @@ function renderLogoDetection(
   }
 
   if (category.detectedBrand != null) {
-    const isZaloPay = category.detectedBrand === "ZaloPay";
-    const icon = isZaloPay ? ICONS.checklistSuccess() : ICONS.checklistFailure();
+    const isZalopay = category.detectedBrand === "Zalopay";
+    const icon = isZalopay ? ICONS.checklistSuccess() : ICONS.checklistFailure();
     items.push(
       `<li class="metric-item">${icon}Thương hiệu nhận diện: <strong>${category.detectedBrand}</strong></li>`
     );
@@ -92,7 +92,7 @@ function renderLogoDetection(
       ? ICONS.checklistSuccess()
       : ICONS.checklistFailure();
     const label = checks.correctBrand
-      ? "Đúng thương hiệu (ZaloPay)"
+      ? "Đúng thương hiệu (Zalopay)"
       : "Sai thương hiệu";
     items.push(`<li class="status-item">${icon}${label}</li>`);
   }

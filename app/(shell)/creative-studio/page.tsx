@@ -14,7 +14,7 @@ const RECENT_PROJECTS = [
   { id: "1", name: "Tết Campaign 2025",     size: "A4",   layers: 8,  color: "#e53e3e" },
   { id: "2", name: "ZLP Summer Promotion",  size: "Social", layers: 5, color: "#0033c9" },
   { id: "3", name: "App Launch Banner Set", size: "Banner", layers: 12, color: "#00cf6a" },
-  { id: "4", name: "ZaloPay Rewards",       size: "Social", layers: 6,  color: "#6366f1" },
+  { id: "4", name: "Zalopay Rewards",       size: "Social", layers: 6,  color: "#6366f1" },
 ];
 
 function ProjectCard({ name, size, layers, color }: { name: string; size: string; layers: number; color: string }) {
@@ -105,7 +105,7 @@ export default function CreativeStudioPage() {
               <EmptyState
                 icon={Palette}
                 title="Templates đang cập nhật"
-                description="Bộ sưu tập template ZaloPay sẽ có mặt sớm."
+                description="Bộ sưu tập template Zalopay sẽ có mặt sớm."
                 size="sm"
               />
             );

@@ -14,7 +14,7 @@
  * with the correct status code and user-facing message.
  */
 
-import { HiggsFieldProvider } from "@/lib/ai/providers/higgsfield";
+import { HiggsFieldProvider } from "@/lib/ai/provider/higgsfield";
 import { uploadGeneratedImage } from "@/lib/supabase/storage";
 import { aiProviderConfig } from "@/lib/config";
 import { resolveBrandContext } from "@/lib/brand/policy";

@@ -5,10 +5,14 @@
  *
  * Architecture overview:
  *
- *   AIProvider (interface)
- *     ├── GeminiProvider   — text-generation, image-analysis, prompt-optimization
- *     ├── ImagenProvider   — image-generation  (imagen-3.0-generate-001)
- *         (future: OpenAIProvider, ClaudeProvider, VeoProvider, FluxProvider, RecraftProvider)
+ *   AIProvider (interface)  — lib/ai/provider.ts
+ *     lib/ai/provider/
+ *       ├── higgsfield.ts    — HiggsFieldProvider  — image-generation via CLI (primary)
+ *       ├── gemini.ts        — GeminiProvider      — text-generation, image-analysis
+ *       ├── google.ts        — GoogleImageProvider — image-generation via Gemini SDK
+ *       ├── openai.ts        — OpenAIProvider      — stub (DALL-E 3)
+ *       ├── fal.ts           — FalProvider         — stub (fal.ai)
+ *       └── replicate.ts     — ReplicateProvider   — stub (Replicate.com)
  *
  *   AIProviderRegistry
  *     — Maps provider names to live instances
@@ -62,9 +66,26 @@ export type {
 export { aiLogger }                 from "./logger";
 export type { LogLevel, AILogContext } from "./logger";
 
-// Providers
-export { GeminiProvider }           from "./providers/gemini";
-export { ImagenProvider }           from "./providers/imagen";
+// Providers — import from the canonical provider/ directory
+export { GeminiProvider }           from "./provider/gemini";
+export { GoogleImageProvider }      from "./provider/google";
+export { HiggsFieldProvider }       from "./provider/higgsfield";
+export { OpenAIProvider }           from "./provider/openai";
+export { FalProvider }              from "./provider/fal";
+export { ReplicateProvider }        from "./provider/replicate";
+
+// Image generation types
+export type {
+  AspectRatio,
+  ImageStyle,
+  ImageQuality,
+  ImageOperationType,
+  ImageGenerateRequest,
+  ImageGenerateResponse,
+  ImageGenerateErrorResponse,
+  ImageMetadata,
+}                                   from "./types/image";
+export { ASPECT_RATIO_DIMENSIONS }  from "./types/image";
 
 // Services
 export { AIService }                from "./services/base";

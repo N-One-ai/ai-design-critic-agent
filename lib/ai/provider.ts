@@ -6,7 +6,7 @@
  * they never import a concrete provider class.
  *
  * Adding a new provider:
- *   1. Create lib/ai/providers/<name>.ts
+ *   1. Create lib/ai/provider/<name>.ts
  *   2. Implement AIProvider
  *   3. Register at startup: AIProviderRegistry.register(new MyProvider(config))
  *   No other file needs to change.

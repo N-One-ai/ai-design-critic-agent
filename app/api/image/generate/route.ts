@@ -172,11 +172,8 @@ export async function POST(req: NextRequest) {
       return err(e.message, "INVALID_REQUEST", 400);
     }
     if (e instanceof ProviderUnavailableError) {
-      return err(
-        "Higgsfield CLI không khả dụng. Đảm bảo `higgsfield` đã được cài đặt và xác thực.",
-        "PROVIDER_UNAVAILABLE",
-        503,
-      );
+      // e.message now contains real CLI detail (ENOENT, auth error, stderr, etc.)
+      return err(e.message, "PROVIDER_UNAVAILABLE", 503);
     }
     if (e instanceof AIError) {
       return err(e.message, e.code, 500);

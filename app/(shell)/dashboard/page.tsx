@@ -154,7 +154,7 @@ const SLIDES: SlideData[] = [
     id: "banner-generator",
     tag: "Tạo nội dung",
     headline: "AI Banner\nGenerator",
-    desc: "Tạo banner quảng cáo đúng chuẩn ZaloPay trong vài giây — 12+ định dạng, 40+ template.",
+    desc: "Tạo banner quảng cáo đúng chuẩn Zalopay trong vài giây — 12+ định dạng, 40+ template.",
     primaryCTA: { label: "Tạo banner ngay", href: "/banner-generator" },
     secondaryCTA: { label: "Duyệt template" },
     gradient: "linear-gradient(135deg, #080830 0%, #0022a8 42%, #0033c9 68%, #1a44dd 100%)",
@@ -164,7 +164,7 @@ const SLIDES: SlideData[] = [
     id: "brand-checker",
     tag: "Tính năng chính",
     headline: "AI Brand Guideline\nChecker",
-    desc: "Phân tích tự động theo 42+ tiêu chuẩn ZaloPay — màu sắc, font, bố cục và tỷ lệ logo.",
+    desc: "Phân tích tự động theo 42+ tiêu chuẩn Zalopay — màu sắc, font, bố cục và tỷ lệ logo.",
     primaryCTA: { label: "Bắt đầu phân tích", href: "/brand-checker" },
     secondaryCTA: { label: "Xem demo" },
     gradient: "linear-gradient(135deg, #001266 0%, #0033c9 52%, #003ee6 100%)",
@@ -412,7 +412,7 @@ const FEATURE_CARDS: FeatureCardData[] = [
   {
     id: "brand-checker",
     title: "AI Brand Guideline Checker",
-    desc: "Phân tích tự động theo 42+ tiêu chuẩn ZaloPay. Kết quả tức thì với báo cáo chi tiết.",
+    desc: "Phân tích tự động theo 42+ tiêu chuẩn Zalopay. Kết quả tức thì với báo cáo chi tiết.",
     cta: "Kiểm tra ngay",
     href: "/brand-checker",
     gradient: "linear-gradient(140deg, #001266 0%, #0033c9 58%, #1a44e0 100%)",
@@ -422,7 +422,7 @@ const FEATURE_CARDS: FeatureCardData[] = [
   {
     id: "image-generator",
     title: "AI Image Generator",
-    desc: "Sinh ảnh sáng tạo từ mô tả văn bản với Imagen 3. Style matching thương hiệu ZaloPay.",
+    desc: "Sinh ảnh sáng tạo từ mô tả văn bản với Imagen 3. Style matching thương hiệu Zalopay.",
     cta: "Tạo ảnh AI",
     href: "/image-generator",
     gradient: "linear-gradient(140deg, #001f5c 0%, #0044bb 50%, #0077cc 100%)",
@@ -504,7 +504,7 @@ function DashboardPanel() {
           <PanelSection title="Thông báo quan trọng">
             <div className="space-y-2">
               {[
-                { text: "Brand guideline ZaloPay v2.4 đã được cập nhật", Icon: Bell },
+                { text: "Brand guideline Zalopay v2.4 đã được cập nhật", Icon: Bell },
                 { text: "42 template Tết 2025 đã sẵn sàng",              Icon: Star },
               ].map(({ text, Icon: IconComp }) => (
                 <div key={text} className="flex items-start gap-2 p-2.5 rounded-[var(--radius-md)] bg-[var(--bg-surface-2)]">
@@ -696,7 +696,7 @@ export default function DashboardPage() {
             })}
           </div>
           <div className="px-5 py-3 border-t border-[var(--border-default)] flex items-center justify-between">
-            <span className="text-[12px] text-[var(--fg-subtle)]">ZaloPay AI Creative Platform v1.0</span>
+            <span className="text-[12px] text-[var(--fg-subtle)]">Zalopay AI Creative Platform v1.0</span>
             <Link href="/settings" className="text-[12.5px] font-medium text-[var(--brand-default)] hover:underline flex items-center gap-1">
               <TrendingUp size={12} />
               Xem changelog

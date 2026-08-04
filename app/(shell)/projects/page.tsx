@@ -22,7 +22,7 @@ const PROJECTS = [
   },
   {
     id: "2",
-    name: "ZaloPay x VinFast",
+    name: "Zalopay x VinFast",
     desc: "Partnership campaign — banner, landing page assets",
     status: "active",
     assets: 12,

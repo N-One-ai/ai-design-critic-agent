@@ -67,7 +67,7 @@ function ThemeToggle() {
 /* ─── Notifications ─── */
 const MOCK_NOTIFICATIONS = [
   { id: "1", title: "Brand analysis hoàn thành",  body: "Banner Tết 2025.jpg — Score 8.5/10",   time: "2 phút",  read: false, color: "var(--accent-default)" },
-  { id: "2", title: "Cập nhật brand guideline",   body: "ZaloPay v2.4 đã có sẵn",              time: "1 giờ",   read: false, color: "var(--brand-default)" },
+  { id: "2", title: "Cập nhật brand guideline",   body: "Zalopay v2.4 đã có sẵn",              time: "1 giờ",   read: false, color: "var(--brand-default)" },
   { id: "3", title: "Thư viện template mới",      body: "42 template Tết vừa được thêm vào",   time: "3 giờ",   read: true,  color: "var(--warning-default)" },
   { id: "4", title: "Credits sắp hết",            body: "Còn 840 / 10,000 credits",             time: "1 ngày",  read: true,  color: "var(--danger-default)" },
 ];
@@ -236,7 +236,7 @@ function Breadcrumb() {
   return (
     <div className="flex items-center gap-1.5 min-w-0">
       <Link href="/dashboard" className="text-[13px] text-[var(--fg-subtle)] hover:text-[var(--fg-muted)] transition-colors shrink-0 hidden sm:block">
-        ZaloPay AI
+        Zalopay AI
       </Link>
       {current && (
         <>

@@ -1,47 +1,32 @@
 /**
  * POST /api/generate-banner
  *
- * Banner Generator pipeline — uses the SAME image generation service as
- * POST /api/image/generate (Higgsfield → Gemini Image model).
+ * Template-based Banner Generator — generates ONLY the hero image.
+ * Logo, taglines, and background are rendered client-side by BannerCanvas.
  *
  * Architecture:
- *   Step 1  BannerPromptService (Gemini text model)
- *           → converts marketing brief into an optimized visual scene description
- *   Step 2  generateImageCore (HiggsFieldProvider)
- *           → generates the image from the optimized prompt
- *
- * Banner Generator is a Prompt Builder on top of Image Generator.
- * No separate image provider. No separate generation pipeline.
- * Changing the image provider requires editing only image-generation-core.ts.
+ *   Step 1  BannerPromptService (Gemini) converts the brief into a visual scene
+ *           description for the hero area (no text, no logos in the prompt).
+ *   Step 2  generateImageCore (HiggsField) generates the hero image at 16:9.
  *
  * Request body:
- *   campaignObjective  string   required
- *   promotion          string   optional
- *   brand              string   optional
- *   targetAudience     string   optional
- *   platform           string   optional  ("facebook"|"instagram"|"story"|"web")
- *   language           string   optional  ("vi"|"en")
- *   visualStyle        string   optional  ("Modern"|"Minimal"|"Bold"|"Festive"|"Corporate")
- *   dimensions         object   optional  { width, height }
- *   customPrompt       string   optional  — bypasses prompt builder when provided
- *   referenceImageDataUrl string optional — sent to Gemini as style inspiration
+ *   product            string   required — hero subject description
+ *   campaignName       string   optional
+ *   tagline1           string   optional — for AI context only, NOT rendered by AI
+ *   tagline2           string   optional — for AI context only, NOT rendered by AI
+ *   audience           string   optional
+ *   heroStyle          string   optional — "Modern"|"Minimal"|"Bold"|"Festive"|"Corporate"
+ *   heroPromptOverride string   optional — bypasses BannerPromptService when set
  *
- * Response (compatible with existing BannerGeneratorPage parser):
- *   imageDataUrl       string   — Supabase public URL or data: URL
- *   prompt             string   — final prompt used for generation
- *   negativePrompt     string?  — negative prompt (for display)
- *   generationId       string
- *   dimensions         object
- *   platform           string?
- *   visualStyle        string?
+ * Response:
+ *   heroImageUrl       string   — Supabase public URL of the AI-generated hero image
+ *   heroPrompt         string   — actual prompt used (for display in UI)
  *   generationTime     number   — wall-clock ms
  *   wasCompressed      boolean
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import { GeminiProvider } from "@/lib/ai/providers/gemini";
+import { GeminiProvider } from "@/lib/ai/provider/gemini";
 import { BannerPromptService } from "@/lib/ai/services/banner-prompt";
 import { generateImageCore } from "@/lib/ai/services/image-generation-core";
 import {
@@ -52,32 +37,10 @@ import {
   ProviderUnavailableError,
 } from "@/lib/ai/errors";
 import { aiProviderConfig } from "@/lib/config";
-import type { ImageStyle, AspectRatio } from "@/lib/ai/types/image";
+import type { ImageStyle } from "@/lib/ai/types/image";
 
-export const runtime   = "nodejs";
+export const runtime    = "nodejs";
 export const maxDuration = 120;
-
-// ── Platform → AspectRatio ────────────────────────────────────────────────────
-
-const PLATFORM_TO_RATIO: Record<string, AspectRatio> = {
-  facebook:  "16:9",
-  instagram: "1:1",
-  story:     "9:16",
-  web:       "16:9",
-};
-
-function platformToAspectRatio(
-  platform: string | undefined,
-  dims: { width: number; height: number },
-): AspectRatio {
-  if (platform && PLATFORM_TO_RATIO[platform]) return PLATFORM_TO_RATIO[platform];
-  // Infer from custom dimensions
-  const r = dims.width / dims.height;
-  if (r > 1.6)  return "16:9";
-  if (r > 1.2)  return "4:3";
-  if (r < 0.7)  return "9:16";
-  return "1:1";
-}
 
 // ── VisualStyle → ImageStyle ──────────────────────────────────────────────────
 
@@ -89,22 +52,8 @@ const STYLE_MAP: Record<string, ImageStyle> = {
   Corporate: "editorial",
 };
 
-function visualStyleToImageStyle(visualStyle: string | undefined): ImageStyle {
-  return (visualStyle ? STYLE_MAP[visualStyle] : undefined) ?? "realistic";
-}
-
-// ── Brand guideline loader ────────────────────────────────────────────────────
-
-function loadBrandGuideline(): Record<string, unknown> | null {
-  try {
-    const raw = fs.readFileSync(
-      path.join(process.cwd(), "brand-guideline.json"),
-      "utf-8",
-    );
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
+function heroStyleToImageStyle(heroStyle: string | undefined): ImageStyle {
+  return (heroStyle ? STYLE_MAP[heroStyle] : undefined) ?? "realistic";
 }
 
 // ── Gemini provider singleton ─────────────────────────────────────────────────
@@ -118,25 +67,14 @@ function getGemini(): GeminiProvider {
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const contentLen = req.headers.get("content-length");
-  if (contentLen && parseInt(contentLen, 10) > 20 * 1024 * 1024) {
-    return NextResponse.json(
-      { error: "Ảnh tham khảo quá lớn. Vui lòng chọn ảnh nhỏ hơn 20MB." },
-      { status: 413 },
-    );
-  }
-
   let body: {
-    campaignObjective?: string;
-    promotion?: string;
-    brand?: string;
-    targetAudience?: string;
-    platform?: string;
-    language?: string;
-    visualStyle?: string;
-    dimensions?: { width: number; height: number };
-    customPrompt?: string;
-    referenceImageDataUrl?: string;
+    product?:            string;
+    campaignName?:       string;
+    tagline1?:           string;
+    tagline2?:           string;
+    audience?:           string;
+    heroStyle?:          string;
+    heroPromptOverride?: string;
   };
 
   try {
@@ -146,128 +84,118 @@ export async function POST(req: NextRequest) {
   }
 
   const {
-    campaignObjective,
-    promotion,
-    brand,
-    targetAudience,
-    platform,
-    language,
-    visualStyle,
-    dimensions      = { width: 1200, height: 628 },
-    customPrompt,
-    referenceImageDataUrl,
+    product,
+    campaignName,
+    tagline1,
+    tagline2,
+    audience,
+    heroStyle,
+    heroPromptOverride,
   } = body;
 
-  if (!customPrompt?.trim() && !campaignObjective?.trim()) {
+  if (!product?.trim() && !heroPromptOverride?.trim()) {
     return NextResponse.json(
-      { error: "Vui lòng nhập mục tiêu chiến dịch." },
+      { error: "Vui lòng nhập mô tả sản phẩm hoặc chủ thể hero." },
       { status: 400 },
     );
   }
 
-  const brandGuideline = loadBrandGuideline();
-  const aspectRatio    = platformToAspectRatio(platform, dimensions);
-  const imageStyle     = visualStyleToImageStyle(visualStyle);
+  const imageStyle = heroStyleToImageStyle(heroStyle);
 
-  // ── Step 1: Build advertising prompt ─────────────────────────────────────
-  // If the user supplied a custom/edited prompt, use it directly.
-  // Otherwise, delegate to BannerPromptService (Gemini) to convert the brief
-  // into a rich visual scene description optimized for Higgsfield.
-  let finalPrompt: string;
-  let negativePrompt: string | undefined;
+  // ── Step 1: Build hero-only visual prompt ─────────────────────────────────
+  let heroPrompt: string;
 
-  try {
-    if (customPrompt?.trim()) {
-      finalPrompt = customPrompt.trim();
-    } else {
+  if (heroPromptOverride?.trim()) {
+    heroPrompt = heroPromptOverride.trim();
+  } else {
+    try {
       const promptService = new BannerPromptService(getGemini());
-      const promptResult  = await promptService.execute(
+      const result = await promptService.execute(
         {
-          campaignObjective: campaignObjective!,
-          promotion,
-          brand,
-          targetAudience,
-          platform,
-          language,
-          visualStyle,
-          dimensions,
-          brandGuideline: brandGuideline ?? undefined,
-          referenceImageDataUrl,
+          campaignName:       campaignName ?? "",
+          tagline1:           tagline1     ?? "",
+          tagline2:           tagline2     ?? "",
+          product:            product!,
+          audience,
+          heroStyle,
         },
         { timeoutMs: 30_000 },
       );
-      finalPrompt    = promptResult.optimizedPrompt;
-      negativePrompt = promptResult.negativePrompt;
+      heroPrompt = result.optimizedPrompt;
+    } catch (e) {
+      const msg = (e as Error).message ?? "Unknown error";
+      console.error("[POST /api/generate-banner] Step 1 — Prompt build failed:", msg);
+
+      if (e instanceof InvalidRequestError) {
+        return NextResponse.json(
+          { error: `Cấu hình Gemini không hợp lệ: ${msg}` },
+          { status: 400 },
+        );
+      }
+      if (e instanceof QuotaExceededError) {
+        return NextResponse.json(
+          { error: `Gemini quota exceeded. Check GEMINI_API_KEY and billing. Detail: ${msg}` },
+          { status: 429 },
+        );
+      }
+      return NextResponse.json(
+        { error: `Xây dựng prompt thất bại: ${msg}` },
+        { status: 500 },
+      );
     }
-  } catch (e) {
-    const msg = (e as Error).message ?? "";
-    console.error("[POST /api/generate-banner] Prompt building failed:", msg);
-    return NextResponse.json(
-      { error: `Tối ưu hóa prompt thất bại: ${msg}` },
-      { status: 500 },
-    );
   }
 
-  // ── Step 2: Generate image via shared Higgsfield pipeline ─────────────────
-  // Same provider, same service, same model as Image Generator.
-  // Banner Generator adds no separate generation implementation.
+  // ── Step 2: Generate hero image via shared Higgsfield pipeline ────────────
+  // Same pipeline as Image Generator — one shared generateImageCore(), one provider.
   let generated: Awaited<ReturnType<typeof generateImageCore>>;
 
   try {
     generated = await generateImageCore({
-      prompt:      finalPrompt,
+      prompt:      heroPrompt,
       style:       imageStyle,
-      aspectRatio,
-      quality:     "hd",    // banners always render at HD quality
+      aspectRatio: "16:9",
+      quality:     "hd",
     });
   } catch (e) {
-    // Surface the exact provider error so developers can diagnose failures.
     const msg = (e as Error).message ?? "Lỗi không xác định.";
+    console.error("[POST /api/generate-banner] Step 2 — Higgsfield generation failed:", msg);
 
     if (e instanceof QuotaExceededError) {
       return NextResponse.json(
-        { error: `Quota Higgsfield đã hết: ${msg}` },
+        { error: `Higgsfield quota exhausted. ${msg}` },
         { status: 429 },
       );
     }
     if (e instanceof ContentFilterError) {
       return NextResponse.json(
-        { error: `Nội dung bị từ chối bởi provider: ${msg}` },
+        { error: `Nội dung bị từ chối bởi content filter. Hãy thử prompt khác. Detail: ${msg}` },
         { status: 422 },
       );
     }
     if (e instanceof InvalidRequestError) {
       return NextResponse.json(
-        { error: `Yêu cầu không hợp lệ: ${msg}` },
+        { error: `Yêu cầu không hợp lệ cho Higgsfield: ${msg}` },
         { status: 400 },
       );
     }
     if (e instanceof ProviderUnavailableError) {
-      return NextResponse.json(
-        { error: `Higgsfield CLI không khả dụng. ${msg}` },
-        { status: 503 },
-      );
+      // ProviderUnavailableError.message now contains real CLI detail (ENOENT, stderr, etc.)
+      return NextResponse.json({ error: msg }, { status: 503 });
     }
     if (e instanceof AIError) {
       return NextResponse.json({ error: msg }, { status: 500 });
     }
 
-    console.error("[POST /api/generate-banner] Generation error:", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  // ── Response ──────────────────────────────────────────────────────────────
-  // Field name `imageDataUrl` preserved for backward compatibility with
-  // BannerGeneratorPage (which stores results in localStorage under that key).
   return NextResponse.json({
-    imageDataUrl:  generated.imageUrl,
-    prompt:        finalPrompt,
-    negativePrompt,
-    generationId:  `banner-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    dimensions,
-    platform,
-    visualStyle,
+    heroImageUrl:   generated.imageUrl,
+    heroPrompt,
     generationTime: generated.generationTime,
     wasCompressed:  generated.wasCompressed,
+    // Legacy fields for any cached frontend code still expecting them
+    imageDataUrl:   generated.imageUrl,
+    prompt:         heroPrompt,
   });
 }
