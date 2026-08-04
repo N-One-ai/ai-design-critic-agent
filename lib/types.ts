@@ -175,6 +175,7 @@ export interface BannerTemplateValues {
   t2Align?:          BannerTaglineAlign;   // default: "center"
   heroMaskStyle?:    HeroMaskStyle;        // default: "RoundedRect"
   heroBlend?:        number;               // 0–100, default: 40
+  blendColor?:       string;               // CSS hex, default: "#00CF6A"
   logoVariant?:      LogoVariant;          // default: "white"
 }
 
@@ -210,6 +211,8 @@ export interface BannerResult {
   heroScale?:   number;
   // Hero blend effect (0–100)
   heroBlend?:   number;
+  // Blend overlay colour (CSS hex)
+  blendColor?:  string;
   // Logo variant
   logoVariant?: LogoVariant;
   // Legacy fields — kept for old history items

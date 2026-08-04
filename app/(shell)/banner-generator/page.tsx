@@ -38,6 +38,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import type { BannerHeroStyle, BannerResult, BannerStatus, BannerTemplateValues, LogoVariant } from "@/lib/types";
+import { BLEND_COLOR_DEFAULT } from "@/lib/brand/blend-presets";
 
 // ── Default form values ───────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ const DEFAULT_FORM: BannerTemplateValues = {
   t2Align:            BANNER_T2_ALIGN_DEFAULT,
   heroMaskStyle:      BANNER_HERO_MASK_DEFAULT,
   heroBlend:          BANNER_HERO_BLEND_DEFAULT,
+  blendColor:         BLEND_COLOR_DEFAULT,
   logoVariant:        LOGO_VARIANT_DEFAULT, // "primary" — full-colour blue+green logo
 };
 
@@ -219,6 +221,7 @@ export default function BannerGeneratorPage() {
         heroOffsetY:  t.offsetY,
         heroScale:    t.scale,
         heroBlend:    form.heroBlend    ?? BANNER_HERO_BLEND_DEFAULT,
+        blendColor:   form.blendColor   ?? BLEND_COLOR_DEFAULT,
         logoVariant:  form.logoVariant  ?? LOGO_VARIANT_DEFAULT,
         createdAt:    new Date().toISOString(),
       };
@@ -318,10 +321,11 @@ export default function BannerGeneratorPage() {
       offsetY: item.heroOffsetY ?? 0,
       scale:   item.heroScale   ?? 1.0,
     });
-    if (item.heroBlend !== undefined || item.logoVariant !== undefined) {
+    if (item.heroBlend !== undefined || item.blendColor !== undefined || item.logoVariant !== undefined) {
       setFormValues((prev) => ({
         ...prev,
         ...(item.heroBlend   !== undefined && { heroBlend:   item.heroBlend }),
+        ...(item.blendColor  !== undefined && { blendColor:  item.blendColor }),
         ...(item.logoVariant !== undefined && { logoVariant: item.logoVariant }),
       }));
     }
@@ -345,6 +349,8 @@ export default function BannerGeneratorPage() {
         onResetTransform={resetTransform}
         heroBlend={formValues.heroBlend ?? BANNER_HERO_BLEND_DEFAULT}
         onBlendChange={(v) => onChange({ heroBlend: v })}
+        blendColor={formValues.blendColor ?? BLEND_COLOR_DEFAULT}
+        onBlendColorChange={(hex) => onChange({ blendColor: hex })}
       />,
     );
   }, [
@@ -414,6 +420,7 @@ export default function BannerGeneratorPage() {
                       heroOffsetY={heroTransform.offsetY}
                       heroScale={heroTransform.scale}
                       heroBlend={formValues.heroBlend ?? BANNER_HERO_BLEND_DEFAULT}
+                      blendColor={formValues.blendColor ?? BLEND_COLOR_DEFAULT}
                       logoVariant={formValues.logoVariant ?? LOGO_VARIANT_DEFAULT}
                       onHeroBoundsReady={setHeroBounds}
                       onRenderComplete={handleRenderComplete}

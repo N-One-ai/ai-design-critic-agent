@@ -12,6 +12,7 @@ import { TaglineAlignmentSelector } from "./tagline-alignment-selector";
 import { HeroImageControls } from "./hero-image-controls";
 import { HeroBlendSlider } from "./hero-blend-slider";
 import { LogoVariantSelector } from "./logo-variant-selector";
+import { BlendColorPicker } from "./blend-color-picker";
 import {
   BANNER_T1_FS_DEFAULT, BANNER_T1_FS_MIN, BANNER_T1_FS_MAX,
   BANNER_T2_FS_DEFAULT, BANNER_T2_FS_MIN, BANNER_T2_FS_MAX,
@@ -20,6 +21,7 @@ import {
   BANNER_T2_ALIGN_DEFAULT,
   BANNER_HERO_BLEND_DEFAULT,
 } from "./banner-canvas";
+import { BLEND_COLOR_DEFAULT, BLEND_OPACITY_RESET } from "@/lib/brand/blend-presets";
 import { type HeroTransform } from "./use-hero-drag";
 
 // ── Hero style options ────────────────────────────────────────────────────────
@@ -47,6 +49,8 @@ interface BannerGeneratorPanelProps {
   onResetTransform?:   () => void;
   heroBlend?:          number;
   onBlendChange?:      (v: number) => void;
+  blendColor?:         string;
+  onBlendColorChange?: (hex: string) => void;
 }
 
 export function BannerGeneratorPanel({
@@ -62,6 +66,8 @@ export function BannerGeneratorPanel({
   onResetTransform,
   heroBlend,
   onBlendChange,
+  blendColor,
+  onBlendColorChange,
 }: BannerGeneratorPanelProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -305,17 +311,39 @@ export function BannerGeneratorPanel({
         {/* ── Hoà nền (Hero image blend) ──────────────────────────────────── */}
         {heroImageUrl && onBlendChange && (
           <div className="px-3 py-3 rounded-[var(--radius-lg)] border border-[var(--border-default)] space-y-2.5">
-            <div>
-              <div className="text-xs font-semibold text-[var(--fg-default)]">Hoà nền</div>
-              <div className="text-[11px] text-[var(--fg-muted)] mt-0.5">
-                Điều chỉnh mức độ hoà trộn giữa hình ảnh AI và nền banner.
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-xs font-semibold text-[var(--fg-default)]">Hoà nền</div>
+                <div className="text-[11px] text-[var(--fg-muted)] mt-0.5">
+                  Điều chỉnh mức độ hoà trộn giữa hình ảnh AI và nền banner.
+                </div>
               </div>
+              {(heroBlend !== BLEND_OPACITY_RESET || (blendColor && blendColor !== BLEND_COLOR_DEFAULT)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onBlendChange(BLEND_OPACITY_RESET);
+                    onBlendColorChange?.(BLEND_COLOR_DEFAULT);
+                  }}
+                  disabled={isLoading}
+                  className="text-[11px] text-[var(--fg-muted)] hover:text-[var(--fg-default)] transition-colors shrink-0 mt-0.5"
+                >
+                  Đặt lại
+                </button>
+              )}
             </div>
             <HeroBlendSlider
               value={heroBlend ?? BANNER_HERO_BLEND_DEFAULT}
               onChange={onBlendChange}
               disabled={isLoading}
             />
+            {onBlendColorChange && (
+              <BlendColorPicker
+                value={blendColor ?? BLEND_COLOR_DEFAULT}
+                onChange={onBlendColorChange}
+                disabled={isLoading}
+              />
+            )}
           </div>
         )}
 

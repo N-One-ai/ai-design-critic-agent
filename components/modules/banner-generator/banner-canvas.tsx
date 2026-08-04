@@ -26,10 +26,39 @@ const BLUE      = "#0033C9";
 const WHITE     = "#FFFFFF";
 const FONT      = '"Aeonik Pro", "Aeonik", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif';
 
-// Brand colour RGB channel strings for gradient stops
+// Brand colour RGB channel strings for gradient stops (defaults — overridable via blendColor)
 const BG_RGB     = "0,147,74";    // #00934A — BG_BOTTOM (dark brand green)
 const BG_MID_RGB = "0,192,96";    // #00C060
-const BG_TOP_RGB = "14,212,108";  // #0ED46C — BG_TOP (light brand green)
+
+// ── Blend colour helpers ──────────────────────────────────────────────────────
+
+/** Parse a #RRGGBB hex string to [r, g, b] (0–255). */
+function hexToRgbTriple(hex: string): [number, number, number] {
+  const c = hex.replace("#", "");
+  return [
+    parseInt(c.slice(0, 2), 16) || 0,
+    parseInt(c.slice(2, 4), 16) || 0,
+    parseInt(c.slice(4, 6), 16) || 0,
+  ];
+}
+
+/** Linear interpolation for integer channels. Used to generate lighter gradient stops. */
+function lerpCh(a: number, b: number, t: number): number {
+  return Math.round(a + (b - a) * t);
+}
+
+/**
+ * Resolve gradient RGB channel strings from an optional custom blend colour.
+ * Returns [mainRgb, midRgb] where midRgb is ~20% lighter than mainRgb.
+ * Falls back to brand green defaults when blendColor is undefined.
+ */
+function resolveBlendRgb(blendColor?: string): [string, string] {
+  if (!blendColor) return [BG_RGB, BG_MID_RGB];
+  const [r, g, b] = hexToRgbTriple(blendColor);
+  const mainRgb = `${r},${g},${b}`;
+  const midRgb  = `${lerpCh(r, 255, 0.20)},${lerpCh(g, 255, 0.20)},${lerpCh(b, 255, 0.20)}`;
+  return [mainRgb, midRgb];
+}
 
 // ── Design tokens — exported so controls can use the same values ──────────────
 
@@ -54,9 +83,10 @@ export const BANNER_T1_ALIGN_DEFAULT: BannerTaglineAlign = "center";
 export const BANNER_T2_ALIGN_DEFAULT: BannerTaglineAlign = "center";
 export const BANNER_HERO_MASK_DEFAULT: HeroMaskStyle = "RoundedRect";
 
-export const BANNER_HERO_BLEND_DEFAULT = 40;
-export const BANNER_HERO_BLEND_MIN     = 0;
-export const BANNER_HERO_BLEND_MAX     = 100;
+export const BANNER_HERO_BLEND_DEFAULT  = 40;
+export const BANNER_HERO_BLEND_MIN      = 0;
+export const BANNER_HERO_BLEND_MAX      = 100;
+export const BANNER_BLEND_COLOR_DEFAULT = "#00CF6A";  // ZaloPay brand green
 
 /**
  * Future-ready effect params for the hero image rendering pipeline.
@@ -65,19 +95,18 @@ export const BANNER_HERO_BLEND_MAX     = 100;
  * inside renderHeroEffects().
  */
 export interface HeroEffectParams {
-  blend: number; // 0–100 · 40 = default
+  blend:       number;  // 0–100 · 40 = default
+  blendColor?: string;  // CSS hex, default: BANNER_BLEND_COLOR_DEFAULT
   // Future:
   // backgroundBlur?: number;
   // glowStrength?:   number;
   // shadowStrength?: number;
-  // colorOverlay?:   string;
   // vignette?:       number;
   // lightWrap?:      number;
-  // noise?:          number;
-  // atmosphere?:     number;
+  // gradient?:       { type: "linear" | "radial"; from: string; to: string };
 }
 
-export const HERO_EFFECT_DEFAULT: HeroEffectParams = { blend: BANNER_HERO_BLEND_DEFAULT };
+export const HERO_EFFECT_DEFAULT: HeroEffectParams = { blend: BANNER_HERO_BLEND_DEFAULT, blendColor: BANNER_BLEND_COLOR_DEFAULT };
 
 // Tagline 1 geometry (padding — height computed from font size)
 const T1_PX             = 24;
@@ -116,6 +145,8 @@ export interface BannerRenderParams {
   heroOffsetY?:       number;
   heroScale?:         number;
   heroBlend?:         number;
+  /** CSS hex colour for the gradient overlay. Default: BANNER_BLEND_COLOR_DEFAULT (#00CF6A). */
+  blendColor?:        string;
   /** Called synchronously once hero bounds are determined (before hero image is drawn). */
   onHeroBoundsReady?: (bounds: { x: number; y: number; w: number; h: number }) => void;
 }
@@ -263,27 +294,31 @@ function drawAmbientTexture(ctx: CanvasRenderingContext2D) {
  *   3. Subtle bottom depth vignette (depth / grounding)
  */
 function drawBrandGradientOverlay(
-  ctx: CanvasRenderingContext2D,
-  blend: number,
+  ctx:            CanvasRenderingContext2D,
+  blend:          number,
   brightnessBias: number,
+  blendColor?:    string,  // optional CSS hex — overrides brand green default
 ) {
   // How far down (fraction of H) the gradient extends to fully transparent
   const fadeEnd = blend <= 40
-    ? 0.28 + (blend / 40) * 0.26   // blend 0→40:  0.28→0.54
-    : 0.54 + ((blend - 40) / 60) * 0.26; // blend 40→100: 0.54→0.80
+    ? 0.28 + (blend / 40) * 0.26          // blend  0→40:  0.28→0.54
+    : 0.54 + ((blend - 40) / 60) * 0.26;  // blend 40→100: 0.54→0.80
 
-  // Adaptive top opacity — brighter images need stronger overlay for contrast
+  // Adaptive top opacity — brighter images need stronger overlay for WCAG contrast
   const topA = Math.min(0.97, Math.max(0.74, 0.87 + (brightnessBias - 0.5) * 0.26));
 
   const fadeEndPx = H * fadeEnd;
 
-  // Main gradient: dark brand green → lighter → transparent
+  // Resolve gradient colour channels (custom colour or brand green defaults)
+  const [mainRgb, midRgb] = resolveBlendRgb(blendColor);
+
+  // Main gradient: colour → lighter → transparent
   const g = ctx.createLinearGradient(0, 0, 0, fadeEndPx);
-  g.addColorStop(0,    `rgba(${BG_RGB},${topA.toFixed(2)})`);
-  g.addColorStop(0.20, `rgba(${BG_MID_RGB},${(topA * 0.95).toFixed(2)})`);
-  g.addColorStop(0.48, `rgba(${BG_MID_RGB},${(topA * 0.48).toFixed(2)})`);
-  g.addColorStop(0.76, `rgba(${BG_RGB},${(topA * 0.12).toFixed(2)})`);
-  g.addColorStop(1.00, `rgba(${BG_RGB},0)`);
+  g.addColorStop(0,    `rgba(${mainRgb},${topA.toFixed(2)})`);
+  g.addColorStop(0.20, `rgba(${midRgb},${(topA * 0.95).toFixed(2)})`);
+  g.addColorStop(0.48, `rgba(${midRgb},${(topA * 0.48).toFixed(2)})`);
+  g.addColorStop(0.76, `rgba(${mainRgb},${(topA * 0.12).toFixed(2)})`);
+  g.addColorStop(1.00, `rgba(${mainRgb},0)`);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, fadeEndPx);
 
@@ -371,6 +406,7 @@ async function renderBanner(
   const heroOffsetY = params?.heroOffsetY         ?? 0;
   const heroScale   = params?.heroScale           ?? 1.0;
   const blend       = params?.heroBlend           ?? BANNER_HERO_BLEND_DEFAULT;
+  const blendColor  = params?.blendColor          ?? undefined;
   const logoPath    = resolveLogoPath(params?.logoVariant ?? LOGO_VARIANT_DEFAULT);
 
   // Emit hero drag bounds immediately — full canvas in the new pipeline.
@@ -408,7 +444,7 @@ async function renderBanner(
   // Brand green safe area: ensures logo + taglines are always legible.
   // Only drawn over the hero image; the brand background covers this naturally.
   if (heroLoaded) {
-    drawBrandGradientOverlay(ctx, blend, topBrightness);
+    drawBrandGradientOverlay(ctx, blend, topBrightness, blendColor);
   }
 
   // ── Layer 3 · AmbientTexture ─────────────────────────────────────────────────
@@ -550,6 +586,7 @@ interface BannerCanvasProps {
   heroOffsetY?:       number;
   heroScale?:         number;
   heroBlend?:         number;
+  blendColor?:        string;
   onHeroBoundsReady?: (bounds: { x: number; y: number; w: number; h: number }) => void;
   /** CSS display size in px — canvas internal resolution is always 1200 × 1200 */
   displaySize?:       number;
@@ -563,7 +600,7 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
       tagline1, tagline2, heroImageUrl,
       t1FontSize, t2FontSize, logoScale, logoVariant,
       t1TextTransform, t1Align, t2Align, heroMaskStyle,
-      heroOffsetX, heroOffsetY, heroScale, heroBlend,
+      heroOffsetX, heroOffsetY, heroScale, heroBlend, blendColor,
       onHeroBoundsReady,
       displaySize, onRenderComplete, className,
     },
@@ -586,7 +623,7 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
         {
           t1FontSize, t2FontSize, logoScale, logoVariant,
           t1TextTransform, t1Align, t2Align, heroMaskStyle,
-          heroOffsetX, heroOffsetY, heroScale, heroBlend,
+          heroOffsetX, heroOffsetY, heroScale, heroBlend, blendColor,
           onHeroBoundsReady,
         },
       );
@@ -594,7 +631,7 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
       tagline1, tagline2, heroImageUrl,
       t1FontSize, t2FontSize, logoScale, logoVariant,
       t1TextTransform, t1Align, t2Align, heroMaskStyle,
-      heroOffsetX, heroOffsetY, heroScale, heroBlend,
+      heroOffsetX, heroOffsetY, heroScale, heroBlend, blendColor,
       onHeroBoundsReady,
       onRenderComplete,
     ]);
