@@ -13,16 +13,24 @@ import type { GenerateRequest, GenerateResponse } from "../types";
 import { AIService } from "./base";
 import { ParseError } from "../errors";
 import { extractJson } from "@/lib/llm-client";
+import {
+  detectSubjectCategory,
+  resolveCameraFraming,
+  buildCompositionBlock,
+  COMPOSITION_NEGATIVE,
+  BANNER_CANVAS_SPECS,
+  DEFAULT_CANVAS_KEY,
+} from "./banner-composition";
 
 // ── Input / Output types ──────────────────────────────────────────────────────
 
 export interface BannerHeroInput {
-  campaignName:       string;
-  tagline1:           string;
-  tagline2:           string;
-  product:            string;
-  audience?:          string;
-  heroStyle?:         string;
+  campaignName:        string;
+  tagline1:            string;
+  tagline2:            string;
+  product:             string;
+  audience?:           string;
+  heroStyle?:          string;
   heroPromptOverride?: string;
 }
 
@@ -41,13 +49,11 @@ export class BannerPromptService extends AIService<BannerHeroInput, BannerPrompt
   readonly requiredCapability = "text-generation" as const;
 
   protected buildRequest(input: BannerHeroInput): GenerateRequest {
-    // If caller supplied an override, skip the LLM entirely — still a valid
-    // GenerateRequest but we'll shortcut in parseResponse.
     const text = buildHeroPromptInstructions(input);
 
     return {
       messages:    [{ role: "user", content: text }],
-      maxTokens:   1024,  // 512 was too low — truncated JSON mid-string
+      maxTokens:   1024,
       temperature: 0.65,
     };
   }
@@ -60,11 +66,10 @@ export class BannerPromptService extends AIService<BannerHeroInput, BannerPrompt
     if (input.heroPromptOverride?.trim()) {
       return {
         optimizedPrompt: input.heroPromptOverride.trim(),
-        negativePrompt:  DEFAULT_NEGATIVE,
+        negativePrompt:  COMPOSITION_NEGATIVE,
       };
     }
 
-    // extractJson throws on malformed JSON — catch and fall through to raw-text fallback.
     let parsed: unknown = null;
     try {
       parsed = extractJson(response.text);
@@ -78,29 +83,22 @@ export class BannerPromptService extends AIService<BannerHeroInput, BannerPrompt
         return {
           optimizedPrompt: obj.optimizedPrompt.trim(),
           negativePrompt:
-            typeof obj.negativePrompt === "string" ? obj.negativePrompt.trim() : DEFAULT_NEGATIVE,
+            typeof obj.negativePrompt === "string"
+              ? obj.negativePrompt.trim()
+              : COMPOSITION_NEGATIVE,
         };
       }
     }
 
-    // Fallback: Gemini returned text but not valid JSON — use the raw text as the prompt.
-    // This handles truncated JSON (low maxTokens) and unexpected model formatting.
+    // Fallback: raw text when JSON parse fails.
     const fallback = response.text.trim();
     if (!fallback) throw new ParseError("Empty prompt response from provider", "gemini");
-    return { optimizedPrompt: fallback, negativePrompt: DEFAULT_NEGATIVE };
+    return { optimizedPrompt: fallback, negativePrompt: COMPOSITION_NEGATIVE };
   }
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ── Style → visual direction ──────────────────────────────────────────────────
 
-const DEFAULT_NEGATIVE =
-  "text in image, logo in image, watermark, typography, words, letters, numbers, " +
-  "UI overlay, HUD, banner layout, brand guidelines overlay, distorted, deformed hands, " +
-  "duplicate subjects, oversaturated, grainy, amateurish, stock photo look, " +
-  "subject in top half of frame, face near top edge, product near top edge, " +
-  "centered subject with no negative space, cluttered top area";
-
-// Style → visual direction mapping
 const STYLE_DIRECTIONS: Record<string, string> = {
   Modern:
     "clean modern commercial lifestyle photography, soft natural light, " +
@@ -121,7 +119,7 @@ const STYLE_DIRECTIONS: Record<string, string> = {
   Corporate:
     "professional Vietnamese business environment, polished editorial quality, " +
     "trustworthy and aspirational, modern office or business lifestyle setting, " +
-    "neutral sophisticated palette with ZaloPay brand accent colors",
+    "neutral sophisticated palette with ZaloPay brand accent colours",
 };
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
@@ -131,21 +129,37 @@ function buildHeroPromptInstructions(input: BannerHeroInput): string {
     (input.heroStyle && STYLE_DIRECTIONS[input.heroStyle]) ??
     STYLE_DIRECTIONS["Modern"];
 
+  // Auto-detect subject and resolve optimal camera framing
+  const category   = detectSubjectCategory(input.product);
+  const framing    = resolveCameraFraming(category);
+  const canvasSpec = BANNER_CANVAS_SPECS[DEFAULT_CANVAS_KEY];
+  const compositionBlock = buildCompositionBlock({ category, framing, canvasSpec });
+
   const lines: string[] = [
     "You are a senior visual art director specialising in Vietnamese fintech advertising.",
     "",
     "Your task: write ONE concise visual scene description for an AI image generator.",
-    "This image will be the HERO of a ZaloPay advertising banner.",
+    "This image will be the HERO of a ZaloPay advertising banner — a 1:1 square canvas.",
     "",
-    "CRITICAL CONSTRAINTS — the following must NEVER appear in the prompt:",
+    "CRITICAL CONSTRAINTS — NEVER appear in the prompt:",
     "  - No text, words, letters, numbers, or typography of any kind",
     "  - No logos, brand marks, watermarks, or symbols",
     "  - No UI overlays, labels, banner layout, or graphic design elements",
-    "  - No quality descriptors (8K, photorealistic, HDR)",
-    "  - No aspect ratio or canvas size — the pipeline handles those",
+    "  - No quality descriptors (8K, photorealistic, HDR) — the pipeline handles those",
+    "  - No aspect ratio or canvas size instructions — already handled below",
     "",
-    "Why: text, logos, and taglines are rendered deterministically by the frontend.",
+    "Why: text, logos, and taglines are rendered deterministically by the frontend canvas.",
     "The AI must generate ONLY the visual scene — a human subject, product, environment, light.",
+    "",
+    "═══ COMPOSITION — MANDATORY SAFE-AREA SYSTEM ═══════════════════════════════",
+    compositionBlock,
+    "════════════════════════════════════════════════════════════════════════════",
+    "",
+    "CAMERA FRAMING RATIONALE:",
+    `  Detected subject type: ${category}`,
+    `  Auto-selected framing: ${framing}`,
+    "  The generated scene MUST respect this framing choice.",
+    "  Never crop heads. Never crop product edges. Never crop full-body subjects at the knees.",
     "",
     "HERO BRIEF:",
     `  Product / Subject : ${input.product}`,
@@ -153,38 +167,30 @@ function buildHeroPromptInstructions(input: BannerHeroInput): string {
 
   if (input.campaignName?.trim()) lines.push(`  Campaign          : ${input.campaignName}`);
   if (input.audience?.trim())     lines.push(`  Target audience   : ${input.audience}`);
-  if (input.tagline1?.trim())     lines.push(`  Tagline 1 context : ${input.tagline1} (DON'T render — visual context only)`);
-  if (input.tagline2?.trim())     lines.push(`  Tagline 2 context : ${input.tagline2} (DON'T render — visual context only)`);
+  if (input.tagline1?.trim())     lines.push(`  Tagline 1 context : ${input.tagline1} (context only — do NOT render)`);
+  if (input.tagline2?.trim())     lines.push(`  Tagline 2 context : ${input.tagline2} (context only — do NOT render)`);
 
   lines.push(
     "",
     "VISUAL DIRECTION:",
     `  Style: ${styleDirection}`,
     "",
-    "ZALOPAY BRAND ESSENCE (inject naturally — not as props or labels):",
+    "ZALOPAY BRAND ESSENCE (inject naturally — not as visible props or labels):",
     "  - Brand colours: #0033C9 (deep blue), #00CF6A (vibrant green)",
     "  - Young Vietnamese urban professionals, age 20–35, modern city lifestyle",
-    "  - Modern smartphone prominently visible if it fits the scene (ZaloPay app on screen)",
+    "  - Modern smartphone naturally visible if it fits the scene",
     "  - Premium commercial advertising photography, magazine cover quality",
     "  - Vietnamese street scenes, modern cafés, homes, or lifestyle settings",
     "",
-    "COMPOSITION — CRITICAL for full-canvas key visual layout:",
-    "  - This image fills the ENTIRE 1200×1200 square banner as a full-bleed background.",
-    "  - The TOP 40–45% of the frame is covered by a brand green gradient overlay",
-    "    (logo + taglines rendered on top). Place ONLY negative space, open sky,",
-    "    soft backgrounds, or shallow depth-of-field blur in the top 40%.",
-    "  - NEVER place faces, product details, hands, or focal subjects in the top 40%.",
-    "  - Place the PRIMARY SUBJECT (person, product, scene focus) in the lower 55–65%.",
-    "  - Centre the subject horizontally — the image is cropped from a 16:9 frame to",
-    "    a 1:1 square by taking the centre portion; off-centre subjects will be clipped.",
-    "  - Use generous depth-of-field: a soft, slightly blurred background in the upper",
-    "    portion creates a natural transition into the green overlay.",
+    "DEPTH-OF-FIELD GUIDANCE:",
+    "  - Use generous shallow depth-of-field in the upper portion (top 40% of frame).",
+    "  - A softly blurred background in the upper area transitions naturally into",
+    "    the brand gradient overlay applied by the frontend.",
     "  - Background colour in the upper portion should complement ZaloPay green",
-    "    (#00CF6A → #009A50) — avoid pure white or very bright colours at the top",
-    "    as this will require stronger overlay and reduce the hero reveal effect.",
+    "    (#00CF6A → #009A50). Avoid pure white or harsh bright colours at the top.",
     "",
     "OUTPUT: Return ONLY a valid JSON object — no markdown fences, no commentary:",
-    `{"optimizedPrompt": "…pure visual scene description, max 150 words…", "negativePrompt": "${DEFAULT_NEGATIVE}"}`,
+    `{"optimizedPrompt": "…pure visual scene description, max 150 words…", "negativePrompt": "…"}`,
   );
 
   return lines.join("\n");

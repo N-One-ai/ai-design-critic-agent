@@ -5,9 +5,14 @@
  * Logo, taglines, and background are rendered client-side by BannerCanvas.
  *
  * Architecture:
- *   Step 1  BannerPromptService (Gemini) converts the brief into a visual scene
- *           description for the hero area (no text, no logos in the prompt).
- *   Step 2  generateImageCore (HiggsField) generates the hero image at 16:9.
+ *   Step 1  BannerPromptService (Gemini) converts the brief into a composition-aware
+ *           visual scene description (no text, no logos; safe-area constraints injected
+ *           by banner-composition.ts into the LLM prompt).
+ *   Step 2  Composition prefix (banner-composition.ts) is prepended to the scene
+ *           description — same safe-area rules enforced a second time at the image
+ *           model layer. Subject category auto-detected; camera framing auto-selected.
+ *   Step 3  generateImageCore (Higgsfield) generates the hero image at 1:1 (square)
+ *           so the AI composition maps directly onto the 1200×1200 canvas.
  *
  * Request body:
  *   product            string   required — hero subject description
@@ -38,6 +43,14 @@ import {
 } from "@/lib/ai/errors";
 import { aiProviderConfig } from "@/lib/config";
 import type { ImageStyle } from "@/lib/ai/types/image";
+import {
+  detectSubjectCategory,
+  resolveCameraFraming,
+  buildCompositionBlock,
+  COMPOSITION_AVOID_INLINE,
+  BANNER_CANVAS_SPECS,
+  DEFAULT_CANVAS_KEY,
+} from "@/lib/ai/services/banner-composition";
 
 export const runtime    = "nodejs";
 export const maxDuration = 120;
@@ -145,20 +158,46 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Step 2: Generate hero image via shared Higgsfield pipeline ────────────
-  // Same pipeline as Image Generator — one shared generateImageCore(), one provider.
+  // ── Step 2: Build final composition-enforced prompt ──────────────────────
+  //
+  // Composition rules are injected at TWO layers:
+  //   Layer 1 (already done): BannerPromptService (Gemini) wrote a composition-
+  //           aware scene description using buildCompositionBlock() in its prompt.
+  //   Layer 2 (here): we prepend the same safe-area block to the final prompt
+  //           sent to Higgsfield so the image model receives hard composition
+  //           constraints regardless of how the LLM paraphrased them.
+  //
+  // aspectRatio "1:1" — hero is generated at square (matching the 1200×1200 canvas)
+  // so the AI's composition maps 1:1 onto the canvas with no surprise cropping.
+  const subject    = product ?? heroPromptOverride ?? "";
+  const category   = detectSubjectCategory(subject);
+  const framing    = resolveCameraFraming(category);
+  const canvasSpec = BANNER_CANVAS_SPECS[DEFAULT_CANVAS_KEY];
+
+  const compositionBlock = buildCompositionBlock({ category, framing, canvasSpec });
+
+  const finalHeroPrompt = [
+    compositionBlock,
+    "",
+    "SCENE:",
+    heroPrompt,
+    "",
+    `AVOID: ${COMPOSITION_AVOID_INLINE}`,
+  ].join("\n");
+
+  // ── Step 3: Generate hero image via shared Higgsfield pipeline ────────────
   let generated: Awaited<ReturnType<typeof generateImageCore>>;
 
   try {
     generated = await generateImageCore({
-      prompt:      heroPrompt,
+      prompt:      finalHeroPrompt,
       style:       imageStyle,
-      aspectRatio: "16:9",
+      aspectRatio: "1:1",
       quality:     "hd",
     });
   } catch (e) {
     const msg = (e as Error).message ?? "Lỗi không xác định.";
-    console.error("[POST /api/generate-banner] Step 2 — Higgsfield generation failed:", msg);
+    console.error("[POST /api/generate-banner] Step 3 — Higgsfield generation failed:", msg);
 
     if (e instanceof QuotaExceededError) {
       return NextResponse.json(
