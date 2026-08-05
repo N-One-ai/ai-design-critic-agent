@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useRightPanel } from "@/contexts/right-panel-context";
 import { BannerGeneratorPanel } from "@/components/modules/banner-generator/panel";
+import { MobileBannerLayout } from "@/components/modules/banner-generator/mobile-banner-layout";
 import {
   BannerCanvas, type BannerCanvasHandle,
   BANNER_T1_FS_DEFAULT, BANNER_T2_FS_DEFAULT,
@@ -380,7 +381,33 @@ export default function BannerGeneratorPage() {
         }
       />
 
-      <div className="p-4 sm:p-6">
+      {/* ── Mobile layout (≤767px) ─────────────────────────────────────────── */}
+      <div className="block md:hidden">
+        <MobileBannerLayout
+          formValues={formValues}
+          heroImageUrl={heroImageUrl}
+          heroTransform={heroTransform}
+          heroBounds={heroBounds}
+          heroMaxOffsets={heroMaxOffsets}
+          onHeroBoundsReady={setHeroBounds}
+          onRenderComplete={handleRenderComplete}
+          status={status}
+          error={error}
+          heroPromptUsed={heroPromptUsed}
+          history={history}
+          activeTab={activeTab}
+          onChange={onChange}
+          onGenerate={handleGenerate}
+          onExport={handleExport}
+          onTransformChange={setHeroTransform}
+          onResetTransform={resetTransform}
+          onUseHistoryItem={handleUseHistoryItem}
+          setActiveTab={setActiveTab}
+        />
+      </div>
+
+      {/* ── Desktop / Tablet layout (≥768px) ───────────────────────────────── */}
+      <div className="hidden md:block p-4 sm:p-6">
         <Tabs
           variant="underline"
           value={activeTab}
