@@ -127,10 +127,13 @@ export function buildHeroPrompt(input: BannerHeroInput): BannerPromptOutput {
   // ── 5. Style / rendering quality (NO subject/location injection) ──────────
   parts.push(quality);
 
-  // ── 6. Copy-space rule ────────────────────────────────────────────────────
+  // ── 6. Safe-area / copy-space rule ───────────────────────────────────────
   parts.push(
-    "Subject positioned in the lower portion of the frame. " +
-    "Leave generous natural space at the top for typography overlay."
+    "CRITICAL: Top 35% is reserved for branding and typography — keep it completely " +
+    "free of faces, heads, eyes, hands, and products. " +
+    "Main subject must be entirely within the lower 65% Hero Area. " +
+    "Subject's face begins at or below 40% from the top. " +
+    "Product and hands fully visible in the lower region."
   );
 
   // ── 7. No-text / no-logo ──────────────────────────────────────────────────

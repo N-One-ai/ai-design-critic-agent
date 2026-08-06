@@ -692,6 +692,8 @@ interface BannerCanvasProps {
   displaySize?:       number;
   onRenderComplete?:  (dataUrl: string) => void;
   className?:         string;
+  /** Show the 35/65 safe-area composition guide overlay (HTML, never exported) */
+  showSafeAreaGuide?: boolean;
 }
 
 export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
@@ -705,6 +707,7 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
       zEnabled, zOpacity, zScale, zColor,
       onHeroBoundsReady,
       displaySize, onRenderComplete, className,
+      showSafeAreaGuide,
     },
     ref,
   ) {
@@ -761,7 +764,7 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
 
     const cssSize = displaySize ?? 560;
 
-    return (
+    const canvasEl = (
       <canvas
         ref={canvasRef}
         width={W}
@@ -769,6 +772,78 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
         style={{ width: cssSize, height: cssSize }}
         className={className}
       />
+    );
+
+    if (!showSafeAreaGuide) return canvasEl;
+
+    // Safe-area overlay — HTML only, never drawn on canvas, never exported.
+    // Top 35% = Brand / Typography Zone | Bottom 65% = Hero Area
+    return (
+      <div
+        className="relative"
+        style={{ width: cssSize, height: cssSize, flexShrink: 0 }}
+      >
+        {canvasEl}
+        <div
+          className="absolute inset-0 pointer-events-none select-none"
+          aria-hidden="true"
+        >
+          {/* Brand Zone label */}
+          <div
+            className="absolute inset-x-0 top-0 flex items-center justify-center"
+            style={{ height: "35%" }}
+          >
+            <span
+              style={{
+                fontSize: Math.round(cssSize * 0.022),
+                letterSpacing: "0.12em",
+                padding: "2px 8px",
+                background: "rgba(0,0,0,0.28)",
+                color: "rgba(255,255,255,0.55)",
+                borderRadius: 3,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                fontFamily: "ui-monospace, monospace",
+              }}
+            >
+              Brand / Typography Zone
+            </span>
+          </div>
+
+          {/* Divider at 35% */}
+          <div
+            className="absolute inset-x-0"
+            style={{
+              top: "35%",
+              height: 0,
+              borderTop: "1.5px dashed rgba(255,255,255,0.45)",
+              boxShadow: "0 1px 0 rgba(0,0,0,0.35)",
+            }}
+          />
+
+          {/* Hero Area label */}
+          <div
+            className="absolute inset-x-0 flex items-center justify-center"
+            style={{ top: "35%", bottom: 0 }}
+          >
+            <span
+              style={{
+                fontSize: Math.round(cssSize * 0.022),
+                letterSpacing: "0.12em",
+                padding: "2px 8px",
+                background: "rgba(0,0,0,0.28)",
+                color: "rgba(255,255,255,0.55)",
+                borderRadius: 3,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                fontFamily: "ui-monospace, monospace",
+              }}
+            >
+              Hero Image Area
+            </span>
+          </div>
+        </div>
+      </div>
     );
   },
 );

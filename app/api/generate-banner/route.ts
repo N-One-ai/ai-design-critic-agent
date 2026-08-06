@@ -5,14 +5,14 @@
  * Logo, taglines, and background are rendered client-side by BannerCanvas.
  *
  * Architecture:
- *   Step 1  BannerPromptService (Gemini) converts the brief into a composition-aware
- *           visual scene description (no text, no logos; safe-area constraints injected
- *           by banner-composition.ts into the LLM prompt).
+ *   Step 1  buildHeroPrompt() (pure template, no LLM) builds the hero prompt.
  *   Step 2  Composition prefix (banner-composition.ts) is prepended to the scene
- *           description — same safe-area rules enforced a second time at the image
- *           model layer. Subject category auto-detected; camera framing auto-selected.
- *   Step 3  generateImageCore (Higgsfield) generates the hero image at 1:1 (square)
- *           so the AI composition maps directly onto the 1200×1200 canvas.
+ *           description — safe-area constraints enforced at the image-model layer.
+ *           Subject category auto-detected; camera framing auto-selected.
+ *   Step 3  generateImageCore (Higgsfield) generates the hero image at 1:1 (square).
+ *           Composition is validated via Gemini vision after each attempt.
+ *           Up to MAX_COMPOSITION_RETRIES attempts; each retry strengthens the
+ *           safe-area instruction in the prompt.
  *
  * Request body:
  *   product            string   required — hero subject description
@@ -21,18 +21,21 @@
  *   tagline2           string   optional — for AI context only, NOT rendered by AI
  *   audience           string   optional
  *   heroStyle          string   optional — "Modern"|"Minimal"|"Bold"|"Festive"|"Corporate"
- *   heroPromptOverride string   optional — bypasses BannerPromptService when set
+ *   heroPromptOverride string   optional — bypasses buildHeroPrompt when set
  *
  * Response:
  *   heroImageUrl       string   — Supabase public URL of the AI-generated hero image
  *   heroPrompt         string   — actual prompt used (for display in UI)
  *   generationTime     number   — wall-clock ms
  *   wasCompressed      boolean
+ *   compositionAttempts number  — how many generation attempts were made
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { buildHeroPrompt } from "@/lib/ai/services/banner-prompt";
 import { generateImageCore } from "@/lib/ai/services/image-generation-core";
+import { GeminiProvider } from "@/lib/ai/provider/gemini";
+import { aiProviderConfig } from "@/lib/config";
 import {
   AIError,
   QuotaExceededError,
@@ -51,8 +54,88 @@ import {
   DEFAULT_CANVAS_KEY,
 } from "@/lib/ai/services/banner-composition";
 
-export const runtime    = "nodejs";
-export const maxDuration = 120;
+export const runtime     = "nodejs";
+export const maxDuration = 180; // extended: up to 3 generation attempts + vision validation
+
+// ── Composition validator ─────────────────────────────────────────────────────
+
+const MAX_COMPOSITION_RETRIES = 3;
+
+// Progressively stronger safe-area instruction appended on retry attempts.
+// Attempt 0: base prompt (no suffix). Attempt 1+: reinforced suffix.
+const RETRY_COMPOSITION_BOOST: readonly string[] = [
+  "",
+  " MANDATORY: Subject face/head MUST be at or below 40% from canvas top. Full body in lower 65%.",
+  " HARD REQUIREMENT: Face visible starting at 50% canvas height. Entire body strictly in bottom 65%. No exception.",
+];
+
+let _geminiSingleton: GeminiProvider | null = null;
+function getGemini(): GeminiProvider {
+  if (!_geminiSingleton) _geminiSingleton = new GeminiProvider(aiProviderConfig.gemini);
+  return _geminiSingleton;
+}
+
+/**
+ * Fetch a remote image and convert to a data URL for Gemini vision.
+ * Returns null on network or size errors (validator will accept the image).
+ */
+async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    if (buffer.byteLength > 6 * 1024 * 1024) return null; // skip if >6 MB
+    const base64   = Buffer.from(buffer).toString("base64");
+    const mimeType = (res.headers.get("content-type") ?? "image/jpeg").split(";")[0].trim();
+    return `data:${mimeType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Validate whether the hero image respects the 35/65 safe-area contract.
+ * Returns true  → composition is acceptable (accept the image).
+ * Returns false → subject appears in the top 35%, retry recommended.
+ * Always returns true on any error so validation never blocks generation.
+ */
+async function validateHeroComposition(imageUrl: string): Promise<boolean> {
+  const dataUrl = await fetchImageAsDataUrl(imageUrl);
+  if (!dataUrl) return true; // can't fetch — accept
+
+  try {
+    const result = await getGemini().generate({
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image", imageDataUrl: dataUrl } as never,
+            {
+              type: "text",
+              text:
+                "Analyze this square advertising banner image.\n" +
+                "The TOP 35% of the image will be covered by a logo and text overlay.\n" +
+                "Determine: Are the subject's FACE, HEAD, EYES, HANDS, and main PRODUCT\n" +
+                "completely within the BOTTOM 65% of the image height?\n" +
+                "A face/head whose top is above the 40% mark from the top is a VIOLATION.\n" +
+                "Respond ONLY with valid JSON (no markdown, no explanation):\n" +
+                '{"ok":true} if the subject is fully in the lower area, {"ok":false} if not.',
+            },
+          ],
+        },
+      ],
+      maxTokens: 30,
+      temperature: 0,
+    });
+
+    const clean  = result.text.trim().replace(/```[a-z]*\n?|```/g, "").trim();
+    const parsed = JSON.parse(clean) as { ok?: boolean };
+    return parsed.ok !== false; // default true unless explicitly false
+  } catch (err) {
+    console.warn("[validateHeroComposition] Skipped:", (err as Error).message);
+    return true;
+  }
+}
 
 // ── VisualStyle → ImageStyle ──────────────────────────────────────────────────
 
@@ -146,16 +229,46 @@ export async function POST(req: NextRequest) {
     `AVOID: ${COMPOSITION_AVOID_INLINE}`,
   ].join("\n");
 
-  // ── Step 3: Generate hero image via shared Higgsfield pipeline ────────────
+  // ── Step 3: Generate with smart retry (composition-validated, max 3 attempts) ─
+  //
+  // After each generation the image is analyzed with Gemini vision.
+  // If the subject appears in the top 35% (Brand Zone), the prompt is
+  // strengthened with an explicit safe-area instruction and regenerated.
+  // The last attempt is always accepted regardless of composition score.
   let generated: Awaited<ReturnType<typeof generateImageCore>>;
+  let compositionAttempts = 0;
 
   try {
-    generated = await generateImageCore({
-      prompt:      finalHeroPrompt,
-      style:       imageStyle,
-      aspectRatio: "1:1",
-      quality:     "hd",
-    });
+    for (let attempt = 0; attempt < MAX_COMPOSITION_RETRIES; attempt++) {
+      compositionAttempts = attempt + 1;
+      const boost        = RETRY_COMPOSITION_BOOST[attempt] ?? "";
+      const promptForRun = attempt === 0 ? finalHeroPrompt : finalHeroPrompt + boost;
+
+      // eslint-disable-next-line no-await-in-loop
+      generated = await generateImageCore({
+        prompt:      promptForRun,
+        style:       imageStyle,
+        aspectRatio: "1:1",
+        quality:     "hd",
+      });
+
+      // Always accept the last attempt
+      if (attempt >= MAX_COMPOSITION_RETRIES - 1) {
+        console.info(`[generate-banner] Accepted on final attempt ${compositionAttempts}`);
+        break;
+      }
+
+      // Validate composition via Gemini vision
+      // eslint-disable-next-line no-await-in-loop
+      const compositionOk = await validateHeroComposition(generated!.imageUrl);
+      if (compositionOk) {
+        console.info(`[generate-banner] Composition OK on attempt ${compositionAttempts}`);
+        break;
+      }
+      console.warn(
+        `[generate-banner] Composition failed attempt ${compositionAttempts}/${MAX_COMPOSITION_RETRIES}, retrying…`,
+      );
+    }
   } catch (e) {
     const msg = (e as Error).message ?? "Lỗi không xác định.";
     console.error("[POST /api/generate-banner] Step 3 — Higgsfield generation failed:", msg);
@@ -179,7 +292,6 @@ export async function POST(req: NextRequest) {
       );
     }
     if (e instanceof ProviderUnavailableError) {
-      // ProviderUnavailableError.message now contains real CLI detail (ENOENT, stderr, etc.)
       return NextResponse.json({ error: msg }, { status: 503 });
     }
     if (e instanceof AIError) {
@@ -190,12 +302,13 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
-    heroImageUrl:   generated.imageUrl,
+    heroImageUrl:        generated!.imageUrl,
     heroPrompt,
-    generationTime: generated.generationTime,
-    wasCompressed:  generated.wasCompressed,
-    // Legacy fields for any cached frontend code still expecting them
-    imageDataUrl:   generated.imageUrl,
-    prompt:         heroPrompt,
+    generationTime:      generated!.generationTime,
+    wasCompressed:       generated!.wasCompressed,
+    compositionAttempts,
+    // Legacy fields
+    imageDataUrl:        generated!.imageUrl,
+    prompt:              heroPrompt,
   });
 }

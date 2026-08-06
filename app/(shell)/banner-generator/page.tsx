@@ -494,6 +494,7 @@ export default function BannerGeneratorPage() {
                       onHeroBoundsReady={setHeroBounds}
                       onRenderComplete={handleRenderComplete}
                       className="rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.18)]"
+                      showSafeAreaGuide
                     />
 
                     {/* Drag overlay — active when hero image is loaded and not generating */}

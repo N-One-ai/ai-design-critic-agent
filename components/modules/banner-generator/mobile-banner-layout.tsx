@@ -462,6 +462,7 @@ export function MobileBannerLayout({
                   onHeroBoundsReady={onHeroBoundsReady}
                   onRenderComplete={onRenderComplete}
                   displaySize={displaySize}
+                  showSafeAreaGuide
                 />
 
                 {/* Loading overlay */}

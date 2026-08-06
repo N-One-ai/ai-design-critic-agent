@@ -17,6 +17,16 @@
  * rectangle or intentionally empty sky.
  */
 
+// ── Safe area constants ───────────────────────────────────────────────────────
+
+/**
+ * Fraction of canvas height reserved for branding, logo, and typography.
+ * Nothing important (face, product, action) may appear above this line.
+ * Used by: prompt builder, composition validator, visual guide overlay.
+ */
+export const SAFE_AREA_TOP_RATIO  = 0.35;   // Top 35%  — Brand / Typography Zone
+export const HERO_AREA_TOP_RATIO  = 0.35;   // Hero starts here (same value, semantic alias)
+
 // ── Subject categories ────────────────────────────────────────────────────────
 
 export type SubjectCategory =
@@ -166,12 +176,25 @@ export function resolveCameraFraming(category: SubjectCategory): CameraFraming {
 
 /**
  * Prepended verbatim before every prompt sent to the image model.
- * Sets global composition quality and constraints — no subject injection.
+ * Sets global composition quality and safe-area constraints — no subject injection.
+ *
+ * SAFE AREA CONTRACT (35 / 65 split):
+ *   TOP 35%  = Brand / Typography Zone — reserved for logo and tagline overlay.
+ *              The AI must fill this region with natural background continuation
+ *              (sky, bokeh, environment depth) — NEVER blank, NEVER important content.
+ *   BOTTOM 65% = Hero Area — ALL important content lives here: face, head,
+ *              hands, product, action, body.
  */
 export const COMPOSITION_PREFIX =
   "Full-bleed commercial advertising photography. " +
-  "The background fills the entire canvas naturally from the scene. " +
-  "Do not leave artificial empty areas or blank patches anywhere. " +
+  "CRITICAL SAFE-AREA RULE: The canvas is divided into two zones. " +
+  "The TOP 35% (Brand Zone) must contain ONLY natural background continuation — " +
+  "sky, atmosphere, bokeh, or environment depth. " +
+  "ALL important content (face, head, eyes, hands, product, body, action) " +
+  "MUST be positioned ENTIRELY within the BOTTOM 65% (Hero Area). " +
+  "The subject's face begins at or below 40% from the top. " +
+  "No face, no eyes, no hands, no product may appear in the top 35%. " +
+  "The top area fills naturally from the scene — it is NOT blank. " +
   "Professionally composed. Cinematic depth of field. " +
   "No text. No logos. No typography.";
 
@@ -200,13 +223,23 @@ export function buildCompositionBlock({
   return [
     `COMPOSITION [${canvasSpec.label} ${canvasSpec.aspectRatio}]:`,
     `  FRAMING:    ${FRAMING_DESCRIPTIONS[framing]}`,
-    "  POSITION:   Primary subject occupies the lower 55–65% of the canvas.",
-    "              Head near 40–50% from the top. Never crop the subject's head or edges.",
-    "              Subject lower-center (slight off-center is natural).",
-    "  CANVAS:     Background continues naturally from the scene into the upper portion.",
-    "              The upper area is NOT blank — it is filled by the scene's natural depth,",
-    "              bokeh, or environment that the user's prompt establishes.",
-    "  DEPTH:      Shallow depth-of-field on subject; natural background recession above.",
+    "  SAFE AREA:  Canvas split into two strict zones:",
+    "              ┌─────────────────────────────────────────────┐",
+    "              │  TOP 35%   — BRAND / TYPOGRAPHY ZONE        │",
+    "              │  Fill with natural background only.          │",
+    "              │  NO face, NO head, NO hands, NO product.     │",
+    "              ├─────────────────────────────────────────────┤",
+    "              │  BOTTOM 65% — HERO AREA                      │",
+    "              │  ALL important content HERE: face, body,     │",
+    "              │  product, action, hands, eyes.               │",
+    "              └─────────────────────────────────────────────┘",
+    "  POSITION:   Subject face/head begins at or BELOW 40% from top.",
+    "              Subject lower-center or slightly off-center — natural.",
+    "              Never crop the subject's head, face, or product edges.",
+    "  BACKGROUND: Upper Brand Zone fills naturally from the scene —",
+    "              sky, bokeh, atmosphere, or environment depth.",
+    "              It is NOT blank, NOT artificial, NOT a clean rectangle.",
+    "  DEPTH:      Shallow depth-of-field on subject; natural recession above.",
     `  CATEGORY:   ${category}`,
   ].join("\n");
 }
@@ -224,6 +257,8 @@ export const COMPOSITION_NEGATIVE =
   "UI overlay, HUD, banner layout, " +
   "extra fingers, deformed hands, duplicate limbs, blurry face, cropped head, " +
   "cropped body at knees, product cropped at edges, deformed anatomy, " +
+  "face in upper half, face near top of frame, head above center, " +
+  "subject in upper 35% of canvas, important content in top third, " +
   "centered subject, subject in exact vertical center, " +
   "artificial empty top area, blank white rectangle at top, " +
   "oversaturated, grainy, low quality, amateurish, stock photo look";
@@ -234,8 +269,10 @@ export const COMPOSITION_NEGATIVE =
  */
 export const COMPOSITION_AVOID_INLINE =
   "no text, no logos, no watermarks, " +
+  "do not place face or head in the top 35%, " +
+  "do not place any important subject (face, hands, product) above 40% from top, " +
   "do not create empty sky or blank gradients at top, " +
   "do not reserve a clean rectangle at top, " +
-  "do not center the subject, " +
+  "do not center the subject vertically, " +
   "do not crop the face or head, " +
   "do not place important objects near the top edge";
