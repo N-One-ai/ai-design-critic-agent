@@ -1,5 +1,5 @@
 /**
- * Banner Composition System — safe-area specs, subject detection, camera framing.
+ * Banner Composition System — subject detection, camera framing, prompt blocks.
  *
  * Single source of truth for how hero images must be composed for ZaloPay
  * banner templates. Both the LLM prompt builder (banner-prompt.ts) and the
@@ -7,13 +7,14 @@
  * composition rules are defined once and enforced at two layers:
  *
  *   Layer 1 — LLM (Gemini): buildCompositionBlock() instructs the scene writer
- *             to produce a composition-aware visual description.
- *   Layer 2 — Image model (Higgsfield): the same block is prepended to the
- *             final prompt as hard constraints before generation.
+ *             to produce a full-bleed, lower-third composition.
+ *   Layer 2 — Image model (Higgsfield): COMPOSITION_PREFIX + the same block are
+ *             prepended to the final prompt as hard constraints before generation.
  *
- * Adding a new canvas size:
- *   Add an entry to BANNER_CANVAS_SPECS. The route resolves the correct spec
- *   from the dimensions passed in the request.
+ * Design principle: the AI image must fill the entire canvas with a natural
+ * scene. The subject is positioned in the lower 55–65% of the frame. The upper
+ * portion is filled with natural background continuation — never a blank
+ * rectangle or intentionally empty sky.
  */
 
 // ── Subject categories ────────────────────────────────────────────────────────
@@ -39,25 +40,29 @@ export type CameraFraming =
 
 const FRAMING_DESCRIPTIONS: Readonly<Record<CameraFraming, string>> = {
   "medium-shot":
-    "Medium Shot — waist-up, subject clearly visible, generous headroom above",
+    "Medium Shot — waist-up, subject anchored in lower portion, natural environment fills above",
   "medium-full-shot":
-    "Medium Full Shot — full body from knees up, subject in lower frame, open sky above",
+    "Medium Full Shot — full body from knees up, subject in lower frame, scene continues naturally above",
   "close-up":
-    "Close-Up — subject fills lower 60% of frame, fine detail, dramatic proximity, sky or blur above",
+    "Close-Up — subject fills lower 55–65%, fine detail, dramatic proximity, environment and depth above",
   "three-quarter-shot":
-    "Three-Quarter Shot — head to below knees, fashion-editorial framing, negative space above",
+    "Three-Quarter Shot — head to below knees, fashion-editorial lower-frame placement, natural space above",
   "hero-product-shot":
-    "Hero Product Shot — product centred in lower 55%, 45° hero angle, clean shadow, soft blur above",
+    "Hero Product Shot — product in lower 55%, 45° hero angle, dramatic shadow, environment extends above",
   "wide-establishing-shot":
-    "Wide Establishing Shot — environment-first, subject anchored at bottom third, vast negative space above",
+    "Wide Establishing Shot — environment-first, subject anchored at bottom third, full scene fills frame",
 };
 
-// ── Canvas safe-area specifications ──────────────────────────────────────────
+// ── Canvas specifications ─────────────────────────────────────────────────────
 
 export interface CanvasSpec {
   /** Display label, e.g. "1200×1200" */
   label:        string;
-  /** Fraction of canvas height reserved for logo + typography (0–1). E.g. 0.40 = top 40% */
+  /**
+   * Fraction of canvas height the brand overlay covers (logo + taglines).
+   * Kept for canvas renderer reference — NOT used in AI composition prompts.
+   * The AI must fill the full canvas; the overlay is composited client-side.
+   */
   safeAreaTop:  number;
   /** Aspect ratio string passed to the image model, e.g. "1:1" */
   aspectRatio:  string;
@@ -65,11 +70,11 @@ export interface CanvasSpec {
 
 /** All officially supported ZaloPay banner canvas sizes. */
 export const BANNER_CANVAS_SPECS: Readonly<Record<string, CanvasSpec>> = {
-  "1200x1200": { label: "1200×1200 (Square)",       safeAreaTop: 0.40, aspectRatio: "1:1"  },
-  "1200x628":  { label: "1200×628 (Landscape)",      safeAreaTop: 0.35, aspectRatio: "16:9" },
-  "1080x1920": { label: "1080×1920 (Story/Reel)",    safeAreaTop: 0.38, aspectRatio: "9:16" },
-  "720x360":   { label: "720×360 (Banner strip)",    safeAreaTop: 0.32, aspectRatio: "16:9" },
-  "1440x360":  { label: "1440×360 (Leaderboard)",    safeAreaTop: 0.28, aspectRatio: "16:9" },
+  "1200x1200": { label: "1200×1200 (Square)",        safeAreaTop: 0.40, aspectRatio: "1:1"  },
+  "1200x628":  { label: "1200×628 (Landscape)",       safeAreaTop: 0.35, aspectRatio: "16:9" },
+  "1080x1920": { label: "1080×1920 (Story/Reel)",     safeAreaTop: 0.38, aspectRatio: "9:16" },
+  "720x360":   { label: "720×360 (Banner strip)",     safeAreaTop: 0.32, aspectRatio: "16:9" },
+  "1440x360":  { label: "1440×360 (Leaderboard)",     safeAreaTop: 0.28, aspectRatio: "16:9" },
   "1080x360":  { label: "1080×360 (Banner strip HD)", safeAreaTop: 0.30, aspectRatio: "16:9" },
 };
 
@@ -157,6 +162,22 @@ export function resolveCameraFraming(category: SubjectCategory): CameraFraming {
   return CATEGORY_TO_FRAMING[category];
 }
 
+// ── Mandatory generation prefix ───────────────────────────────────────────────
+
+/**
+ * Prepended verbatim before every prompt sent to the image model.
+ * Sets the global composition intent before any scene-specific instructions.
+ */
+export const COMPOSITION_PREFIX =
+  "Create a premium commercial advertising hero image. " +
+  "Use a full-bleed composition — the background must naturally fill the entire canvas. " +
+  "Position the main subject in the lower third of the frame. " +
+  "Maintain generous natural negative space above the subject using depth, " +
+  "architecture, bokeh, or environment — not blank space. " +
+  "Do not intentionally leave an empty top area. " +
+  "The scene should feel professionally photographed. " +
+  "No text. No logos. No typography.";
+
 // ── Composition block builder ─────────────────────────────────────────────────
 
 export interface CompositionBlockOptions {
@@ -170,55 +191,62 @@ export interface CompositionBlockOptions {
  *   - LLM prompts (Gemini) — instructs the scene writer
  *   - Image model prompts (Higgsfield) — hard composition constraints
  *
- * Both layers receive the same rules so composition intent survives the
- * prompt-rewrite step.
+ * The AI image must fill the entire canvas. The subject lives in the lower
+ * 55–65% of the frame. The upper portion is filled with natural background
+ * continuation — never a blank rectangle or artificial clean zone.
  */
 export function buildCompositionBlock({
   category,
   framing,
   canvasSpec = BANNER_CANVAS_SPECS[DEFAULT_CANVAS_KEY],
 }: CompositionBlockOptions): string {
-  const safeTopPct = Math.round(canvasSpec.safeAreaTop * 100);
-  const heroPct    = Math.round((1 - canvasSpec.safeAreaTop) * 100);
-
   return [
-    `BANNER SAFE-AREA COMPOSITION [${canvasSpec.label}]:`,
-    `  TOP ${safeTopPct}%  ← CLEAN ZONE — open sky, soft blur, or neutral gradient ONLY.`,
-    "             No faces. No hands. No products. No important objects.",
-    "             This zone is overlaid by logo and taglines in the final banner.",
-    `  LOWER ${heroPct}%  ← HERO ZONE — place the primary subject here.`,
-    `             ${FRAMING_DESCRIPTIONS[framing]}`,
-    "             Subject lower-center (or lower-left/right if natural to the scene).",
-    "             Never crop heads. Never crop key product edges.",
-    "  DEPTH:     Shallow focus in upper portion; background softly blurs toward top.",
-    "             Smooth visual transition from background into the upper clean zone.",
-    "  INTENT:    Image must look intentionally composed for a premium advertising banner.",
-    "             Not randomly framed. Not snapshot-style. Deliberate cinematic composition.",
+    `BANNER COMPOSITION [${canvasSpec.label}]:`,
+    `  CANVAS:     Full-bleed ${canvasSpec.aspectRatio}. Background fills the entire frame.`,
+    "              No artificial empty zones. No reserved rectangles at top.",
+    "  SUBJECT:    Position the primary subject in the lower 55–65% of the canvas.",
+    "              Head should appear around 40–50% from the top of the image.",
+    "              Body occupies the lower portion. Never crop heads or product edges.",
+    `              ${FRAMING_DESCRIPTIONS[framing]}`,
+    "              Subject lower-center (or slightly left/right if natural to scene).",
+    "  BACKGROUND: The upper portion must contain natural background continuation.",
+    "              Examples: café interior, stadium, office, city skyline, park,",
+    "              restaurant, gradient wall, soft bokeh, trees, architecture.",
+    "              The background is part of the same scene — never a blank patch.",
+    "  DEPTH:      Natural depth separates subject from background.",
+    "              Shallow depth-of-field on subject; background continues naturally above.",
+    "  INTENT:     Premium commercial photography. Cinematic. Full-bleed. Deliberately composed.",
+    `  SUBJECT CATEGORY: ${category} — ${FRAMING_DESCRIPTIONS[framing]}`,
   ].join("\n");
 }
 
 // ── Negative constraints ──────────────────────────────────────────────────────
 
-/** Full negative prompt for providers that accept a separate negative parameter. */
+/**
+ * Full negative prompt for providers that accept a separate negative parameter.
+ * Per spec: focus on preventing blank areas, wrong subject position, and
+ * common AI image defects. Does NOT ban upper-half content — that would
+ * recreate the artificial clean-zone behavior.
+ */
 export const COMPOSITION_NEGATIVE =
+  "empty sky, blank gradients at top, reserved clean rectangle, artificial empty zone, " +
+  "blank upper half, plain white top area, grey empty background, " +
+  "centered subject, subject in exact center of frame, " +
+  "face cropped, head cut off, product cropped at edges, feet cropped, " +
+  "important objects near top edge, " +
   "text in image, logo in image, watermark, typography, words, letters, numbers, " +
   "UI overlay, HUD, banner layout, brand guidelines overlay, " +
-  "subject in top half of frame, face near top edge, face at top third, " +
-  "product near top edge, object near top, " +
-  "symmetrical composition, centered subject with no negative space, " +
-  "cluttered top area, busy background in upper portion, " +
-  "head cropped, head cut off, product cropped, feet cropped, " +
-  "random framing, accidental composition, snapshot aesthetic, " +
   "distorted, deformed hands, duplicate subjects, " +
   "oversaturated, grainy, amateurish, stock photo look, low quality";
 
 /**
  * Compact avoid clause for inline injection when a separate negative param is
  * unavailable (e.g. Higgsfield CLI which has no --negative_prompt flag).
- * Kept short so it doesn't dominate the prompt budget.
  */
 export const COMPOSITION_AVOID_INLINE =
   "no text, no logos, no watermarks, " +
-  "no faces in upper half, no subject in top 40%, " +
-  "no head cropping, no symmetrical layout, " +
-  "no snapshot framing, no stock-photo aesthetic";
+  "do not create empty sky or blank gradients at top, " +
+  "do not reserve a clean rectangle at top, " +
+  "do not center the subject, " +
+  "do not crop the face or head, " +
+  "do not place important objects near the top edge";

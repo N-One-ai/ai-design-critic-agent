@@ -177,6 +177,16 @@ export interface BannerTemplateValues {
   heroBlend?:        number;               // 0–100, default: 40
   blendColor?:       string;               // CSS hex, default: "#00CF6A"
   logoVariant?:      LogoVariant;          // default: "white"
+  // Typography colour overrides (undefined → brand white default)
+  t1Color?:          string;               // CSS hex, default: "#FFFFFF"
+  t1ColorOpacity?:   number;               // 0–100, default: 100
+  t2Color?:          string;               // CSS hex, default: "#FFFFFF"
+  t2ColorOpacity?:   number;               // 0–100, default: 100
+  // Trademark Z watermark
+  zEnabled?:         boolean;              // default: true
+  zOpacity?:         number;               // 0–25 (percent), default: 10
+  zScale?:           number;               // 70–120, default: 100
+  zColor?:           string;               // CSS hex; undefined = auto (follows blendColor)
 }
 
 // Legacy — kept so old localStorage history items still deserialise cleanly
@@ -212,9 +222,19 @@ export interface BannerResult {
   // Hero blend effect (0–100)
   heroBlend?:   number;
   // Blend overlay colour (CSS hex)
-  blendColor?:  string;
+  blendColor?:       string;
   // Logo variant
-  logoVariant?: LogoVariant;
+  logoVariant?:      LogoVariant;
+  // Typography text colours
+  t1Color?:          string;
+  t1ColorOpacity?:   number;
+  t2Color?:          string;
+  t2ColorOpacity?:   number;
+  // Trademark Z watermark
+  zEnabled?:         boolean;
+  zOpacity?:         number;
+  zScale?:           number;
+  zColor?:           string;
   // Legacy fields — kept for old history items
   platform?: string;
   visualStyle?: string;

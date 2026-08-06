@@ -47,6 +47,7 @@ import {
   detectSubjectCategory,
   resolveCameraFraming,
   buildCompositionBlock,
+  COMPOSITION_PREFIX,
   COMPOSITION_AVOID_INLINE,
   BANNER_CANVAS_SPECS,
   DEFAULT_CANVAS_KEY,
@@ -163,9 +164,9 @@ export async function POST(req: NextRequest) {
   // Composition rules are injected at TWO layers:
   //   Layer 1 (already done): BannerPromptService (Gemini) wrote a composition-
   //           aware scene description using buildCompositionBlock() in its prompt.
-  //   Layer 2 (here): we prepend the same safe-area block to the final prompt
-  //           sent to Higgsfield so the image model receives hard composition
-  //           constraints regardless of how the LLM paraphrased them.
+  //   Layer 2 (here): COMPOSITION_PREFIX + composition block are prepended to
+  //           the final prompt sent to Higgsfield so the image model receives
+  //           hard full-bleed / lower-third constraints regardless of LLM phrasing.
   //
   // aspectRatio "1:1" — hero is generated at square (matching the 1200×1200 canvas)
   // so the AI's composition maps 1:1 onto the canvas with no surprise cropping.
@@ -177,6 +178,8 @@ export async function POST(req: NextRequest) {
   const compositionBlock = buildCompositionBlock({ category, framing, canvasSpec });
 
   const finalHeroPrompt = [
+    COMPOSITION_PREFIX,
+    "",
     compositionBlock,
     "",
     "SCENE:",

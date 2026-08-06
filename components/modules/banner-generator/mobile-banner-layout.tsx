@@ -12,6 +12,13 @@ import {
   BANNER_T2_FS_DEFAULT, BANNER_T2_FS_MIN, BANNER_T2_FS_MAX,
   BANNER_T1_TEXT_TRANSFORM_DEFAULT, BANNER_T1_ALIGN_DEFAULT, BANNER_T2_ALIGN_DEFAULT,
   BANNER_LOGO_SCALE,
+  BANNER_Z_ENABLED_DEFAULT,
+  BANNER_Z_OPACITY_DEFAULT,
+  BANNER_Z_SCALE_DEFAULT,
+  BANNER_Z_OPACITY_MIN,
+  BANNER_Z_OPACITY_MAX,
+  BANNER_Z_SCALE_MIN,
+  BANNER_Z_SCALE_MAX,
 } from "./banner-canvas";
 import { HeroImageControls } from "./hero-image-controls";
 import { HeroBlendSlider } from "./hero-blend-slider";
@@ -19,6 +26,7 @@ import { BlendColorPicker } from "./blend-color-picker";
 import { FontSizeSlider } from "./font-size-slider";
 import { TaglineAlignmentSelector } from "./tagline-alignment-selector";
 import { LogoVariantSelector } from "./logo-variant-selector";
+import { TypographyColorPicker } from "./typography-color-picker";
 import { PrimaryActionButton, type CTAState } from "@/components/ui/primary-action-button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +38,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs } from "@/components/ui/tabs";
 import { LOGO_VARIANT_DEFAULT } from "@/lib/assets/logo-assets";
 import { BLEND_COLOR_DEFAULT, BLEND_OPACITY_RESET } from "@/lib/brand/blend-presets";
+import { T_COLOR_DEFAULT, T_OPACITY_DEFAULT } from "@/lib/brand/typography-presets";
+import { Z_COLOR_PRESETS } from "@/lib/brand/z-trademark";
 import type {
   BannerTemplateValues, BannerHeroStyle, BannerStatus, BannerResult,
 } from "@/lib/types";
@@ -361,6 +371,7 @@ export function MobileBannerLayout({
 
   const [fullscreenOpen, setFullscreenOpen]     = useState(false);
   const [previewDataUrl, setPreviewDataUrl]     = useState<string | null>(null);
+  const [brandLocked,    setBrandLocked]        = useState(true);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -440,6 +451,14 @@ export function MobileBannerLayout({
                   heroBlend={formValues.heroBlend ?? BANNER_HERO_BLEND_DEFAULT}
                   blendColor={formValues.blendColor ?? BLEND_COLOR_DEFAULT}
                   logoVariant={formValues.logoVariant ?? LOGO_VARIANT_DEFAULT}
+                  t1Color={formValues.t1Color}
+                  t1ColorOpacity={formValues.t1ColorOpacity}
+                  t2Color={formValues.t2Color}
+                  t2ColorOpacity={formValues.t2ColorOpacity}
+                  zEnabled={formValues.zEnabled}
+                  zOpacity={formValues.zOpacity}
+                  zScale={formValues.zScale}
+                  zColor={formValues.zColor}
                   onHeroBoundsReady={onHeroBoundsReady}
                   onRenderComplete={onRenderComplete}
                   displaySize={displaySize}
@@ -739,6 +758,47 @@ export function MobileBannerLayout({
                 title="Typography"
                 icon={<Type size={15} />}
               >
+                {/* Brand Lock toggle */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] text-[var(--fg-muted)]">
+                    {brandLocked ? "Khoá màu thương hiệu" : "Cho phép màu tuỳ chọn"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={brandLocked}
+                    onClick={() => setBrandLocked((v) => !v)}
+                    disabled={isLoading}
+                    style={{
+                      width:        34,
+                      height:       18,
+                      borderRadius: 9,
+                      background:   brandLocked ? "var(--brand-default)" : "var(--border-strong)",
+                      position:     "relative",
+                      border:       "none",
+                      cursor:       "pointer",
+                      transition:   "background 0.15s",
+                      flexShrink:   0,
+                      padding:      0,
+                    }}
+                    className="disabled:opacity-40"
+                  >
+                    <span
+                      style={{
+                        position:     "absolute",
+                        top:          2,
+                        left:         brandLocked ? 18 : 2,
+                        width:        14,
+                        height:       14,
+                        borderRadius: "50%",
+                        background:   "#ffffff",
+                        boxShadow:    "0 1px 3px rgba(0,0,0,0.30)",
+                        transition:   "left 0.15s",
+                      }}
+                    />
+                  </button>
+                </div>
+
                 <div className="space-y-5">
                   <FontSizeSlider
                     label="Tagline 1 (hộp xanh nhỏ)"
@@ -750,6 +810,18 @@ export function MobileBannerLayout({
                     disabled={isLoading}
                     onChange={(v) => onChange({ t1FontSize: v })}
                   />
+                  <TypographyColorPicker
+                    label="Màu chữ Tagline 1"
+                    value={formValues.t1Color ?? T_COLOR_DEFAULT}
+                    opacity={formValues.t1ColorOpacity ?? T_OPACITY_DEFAULT}
+                    onChange={(hex, op) => onChange({ t1Color: hex, t1ColorOpacity: op })}
+                    onReset={() => onChange({ t1Color: T_COLOR_DEFAULT, t1ColorOpacity: T_OPACITY_DEFAULT })}
+                    disabled={isLoading}
+                    brandLocked={brandLocked}
+                    bgForContrast="#0033C9"
+                    recentKey="banner-typo-t1-recent"
+                  />
+
                   <FontSizeSlider
                     label="Tagline 2 (tiêu đề chính)"
                     value={formValues.t2FontSize ?? BANNER_T2_FS_DEFAULT}
@@ -760,6 +832,170 @@ export function MobileBannerLayout({
                     disabled={isLoading}
                     onChange={(v) => onChange({ t2FontSize: v })}
                   />
+                  <TypographyColorPicker
+                    label="Màu chữ Tagline 2"
+                    value={formValues.t2Color ?? T_COLOR_DEFAULT}
+                    opacity={formValues.t2ColorOpacity ?? T_OPACITY_DEFAULT}
+                    onChange={(hex, op) => onChange({ t2Color: hex, t2ColorOpacity: op })}
+                    onReset={() => onChange({ t2Color: T_COLOR_DEFAULT, t2ColorOpacity: T_OPACITY_DEFAULT })}
+                    disabled={isLoading}
+                    brandLocked={brandLocked}
+                    bgForContrast="#00934A"
+                    recentKey="banner-typo-t2-recent"
+                  />
+                </div>
+              </MobileSection>
+
+              {/* Brand Elements */}
+              <MobileSection
+                title="Brand Elements"
+                icon={<Palette size={15} />}
+              >
+                {/* Trademark Z */}
+                <div className="space-y-3">
+                  {/* Enable toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[13px] font-semibold text-[var(--fg-default)]">Trademark Z</div>
+                      <div className="text-[11px] text-[var(--fg-muted)] mt-0.5">
+                        Hình nền thương hiệu
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT}
+                      onClick={() => onChange({ zEnabled: !(formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT) })}
+                      disabled={isLoading}
+                      style={{
+                        width:        34,
+                        height:       18,
+                        borderRadius: 9,
+                        background:   (formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT)
+                          ? "var(--brand-default)"
+                          : "var(--border-strong)",
+                        position:     "relative",
+                        border:       "none",
+                        cursor:       "pointer",
+                        transition:   "background 0.15s",
+                        flexShrink:   0,
+                        padding:      0,
+                      }}
+                      className="disabled:opacity-40"
+                    >
+                      <span
+                        style={{
+                          position:     "absolute",
+                          top:          2,
+                          left:         (formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT) ? 18 : 2,
+                          width:        14,
+                          height:       14,
+                          borderRadius: "50%",
+                          background:   "#ffffff",
+                          boxShadow:    "0 1px 3px rgba(0,0,0,0.30)",
+                          transition:   "left 0.15s",
+                        }}
+                      />
+                    </button>
+                  </div>
+
+                  {(formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT) && (
+                    <div className="space-y-3 pt-1">
+
+                      {/* Opacity slider */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11.5px] text-[var(--fg-muted)]">Độ mờ</span>
+                          <span className="text-[11px] font-mono text-[var(--fg-subtle)]">
+                            {formValues.zOpacity ?? BANNER_Z_OPACITY_DEFAULT}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={BANNER_Z_OPACITY_MIN}
+                          max={BANNER_Z_OPACITY_MAX}
+                          step={1}
+                          value={formValues.zOpacity ?? BANNER_Z_OPACITY_DEFAULT}
+                          onChange={(e) => onChange({ zOpacity: Number(e.target.value) })}
+                          disabled={isLoading}
+                          className="w-full accent-[var(--brand-default)] disabled:opacity-40"
+                        />
+                      </div>
+
+                      {/* Scale slider */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11.5px] text-[var(--fg-muted)]">Kích cỡ</span>
+                          <span className="text-[11px] font-mono text-[var(--fg-subtle)]">
+                            {formValues.zScale ?? BANNER_Z_SCALE_DEFAULT}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={BANNER_Z_SCALE_MIN}
+                          max={BANNER_Z_SCALE_MAX}
+                          step={5}
+                          value={formValues.zScale ?? BANNER_Z_SCALE_DEFAULT}
+                          onChange={(e) => onChange({ zScale: Number(e.target.value) })}
+                          disabled={isLoading}
+                          className="w-full accent-[var(--brand-default)] disabled:opacity-40"
+                        />
+                      </div>
+
+                      {/* Color swatches */}
+                      <div>
+                        <span className="text-[11.5px] text-[var(--fg-muted)] block mb-2">Màu sắc</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Auto swatch */}
+                          <button
+                            type="button"
+                            title="Tự động (theo màu nền)"
+                            disabled={isLoading}
+                            onClick={() => onChange({ zColor: undefined })}
+                            style={{
+                              width:        28,
+                              height:       28,
+                              borderRadius: "50%",
+                              background:   "conic-gradient(#00CF6A 0deg 120deg, #0033C9 120deg 240deg, #FFFFFF 240deg 360deg)",
+                              border:       !formValues.zColor
+                                ? "2.5px solid var(--fg-default)"
+                                : "1.5px solid rgba(255,255,255,0.15)",
+                              cursor:       "pointer",
+                              flexShrink:   0,
+                            }}
+                            className="disabled:opacity-40 hover:scale-105 transition-transform"
+                          />
+                          {Z_COLOR_PRESETS.map((p) => {
+                            const isSel = formValues.zColor?.toUpperCase() === p.hex.toUpperCase();
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                title={p.labelVi}
+                                disabled={isLoading}
+                                onClick={() => onChange({ zColor: p.hex })}
+                                style={{
+                                  width:        28,
+                                  height:       28,
+                                  borderRadius: "50%",
+                                  background:   p.hex,
+                                  border:       isSel
+                                    ? "2.5px solid var(--fg-default)"
+                                    : "1.5px solid rgba(255,255,255,0.15)",
+                                  cursor:       "pointer",
+                                  flexShrink:   0,
+                                }}
+                                className="disabled:opacity-40 hover:scale-105 transition-transform"
+                              />
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10.5px] text-[var(--fg-muted)] mt-1.5">
+                          Tự động = theo màu nền đang chọn
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </MobileSection>
 

@@ -88,6 +88,28 @@ export const BANNER_HERO_BLEND_MIN      = 0;
 export const BANNER_HERO_BLEND_MAX      = 100;
 export const BANNER_BLEND_COLOR_DEFAULT = "#00CF6A";  // ZaloPay brand green
 
+export const BANNER_T1_COLOR_DEFAULT   = "#FFFFFF";
+export const BANNER_T2_COLOR_DEFAULT   = "#FFFFFF";
+export const BANNER_T1_OPACITY_DEFAULT = 100;
+export const BANNER_T2_OPACITY_DEFAULT = 100;
+
+// ── Trademark Z defaults ──────────────────────────────────────────────────────
+export const BANNER_Z_ENABLED_DEFAULT  = true;
+export const BANNER_Z_OPACITY_DEFAULT  = 20;   // 0–100 (percent)
+export const BANNER_Z_SCALE_DEFAULT    = 100;  // 70–120
+export const BANNER_Z_COLOR_DEFAULT    = "#FFFFFF";
+export const BANNER_Z_OPACITY_MIN      = 0;
+export const BANNER_Z_OPACITY_MAX      = 100;
+export const BANNER_Z_SCALE_MIN        = 70;
+export const BANNER_Z_SCALE_MAX        = 120;
+
+/** Build a CSS rgba() string from a hex colour and 0-100 opacity value. */
+function hexToRgbaStyle(hex: string, opacity: number): string {
+  const [r, g, b] = hexToRgbTriple(hex);
+  const a = Math.max(0, Math.min(1, opacity / 100));
+  return `rgba(${r},${g},${b},${a.toFixed(3)})`;
+}
+
 /**
  * Future-ready effect params for the hero image rendering pipeline.
  * Add new fields here when new effect controls are built — existing
@@ -147,8 +169,46 @@ export interface BannerRenderParams {
   heroBlend?:         number;
   /** CSS hex colour for the gradient overlay. Default: BANNER_BLEND_COLOR_DEFAULT (#00CF6A). */
   blendColor?:        string;
+  /** Tagline 1 text colour (CSS hex). Default: #FFFFFF. */
+  t1Color?:           string;
+  /** Tagline 1 text opacity (0–100). Default: 100. */
+  t1ColorOpacity?:    number;
+  /** Tagline 2 text colour (CSS hex). Default: #FFFFFF. */
+  t2Color?:           string;
+  /** Tagline 2 text opacity (0–100). Default: 100. */
+  t2ColorOpacity?:    number;
+  /** Trademark Z watermark — enabled/disabled. Default: true. */
+  zEnabled?:          boolean;
+  /** Trademark Z opacity (0–100 percent). Default: 20. */
+  zOpacity?:          number;
+  /** Trademark Z scale (70–120). Default: 100. */
+  zScale?:            number;
+  /** Trademark Z color (CSS hex). Default: auto = blendColor. */
+  zColor?:            string;
   /** Called synchronously once hero bounds are determined (before hero image is drawn). */
   onHeroBoundsReady?: (bounds: { x: number; y: number; w: number; h: number }) => void;
+}
+
+// ── Trademark Z — SVG path constants (internal) ──────────────────────────────
+
+/** SVG viewBox dimensions for Z-agent.svg */
+const Z_SVG_VW = 696.47;
+const Z_SVG_VH = 890.59;
+/** Height of the Z at scale=100, as a fraction of canvas height */
+const Z_HEIGHT_RATIO   = 0.55;
+/** Top padding: how far down from the canvas top to place the Z */
+const Z_TOP_PADDING    = 0.04;
+/** How far beyond the canvas right edge the Z extends (natural right-side crop) */
+const Z_RIGHT_OVERHANG = 0.08;
+/** Official ZaloPay Trademark Z path — from Z-agent.svg (viewBox 0 0 696.47 890.59) */
+// prettier-ignore
+const Z_SVG_PATH_DATA = "M312.24,659.8l384.24-427.44V0l-9.56,3.91c-10.19,4.17-20.65,8.18-31.08,11.92-86.18,31.04-176.79,46.78-269.3,46.78-103.95,0-205.02-19.75-300.39-58.7L76.57,0,0,153.14l10.94,4.62c118.99,50.26,245.35,75.74,375.58,75.74,24.74,0,49.66-.95,74.4-2.83L1.92,741.28l74.65,149.31,9.56-3.91c10.15-4.15,20.6-8.16,31.07-11.92,86.23-31.06,176.85-46.8,269.32-46.8,103.92,0,204.99,19.76,300.39,58.72l9.56,3.9v-182.83c-142.73-48.7-274.61-56.97-384.24-47.96Z";
+
+// Lazy-init Path2D so it is only created in browser context (not during SSR)
+let _zPath2D: Path2D | null = null;
+function getZPath2D(): Path2D {
+  if (!_zPath2D) _zPath2D = new Path2D(Z_SVG_PATH_DATA);
+  return _zPath2D;
 }
 
 // ── Image cache (module-level — reused across renders) ────────────────────────
@@ -376,9 +436,10 @@ function drawHeroPlaceholder(ctx: CanvasRenderingContext2D) {
 //   1  HeroBackgroundImage  — full-canvas cover-fit hero (or brand background)
 //   2  HeroGradientOverlay  — brand green text-safe area, fades to transparent
 //   3  AmbientTexture       — diagonal streak + glow orbs (brand texture)
-//   4  HeroLogoLayer        — ZaloPay logo (top-left, always on top)
-//   5  HeroTypographyLayer  — Tagline 1 (pill) + Tagline 2 (headline)
-//   6  Placeholder hint     — shown only when no hero image has been generated
+//   4  TrademarkZ           — decorative brand Z watermark (soft-light, 10% opacity)
+//   5  HeroLogoLayer        — ZaloPay logo (top-left, always on top)
+//   6  HeroTypographyLayer  — Tagline 1 (pill) + Tagline 2 (headline)
+//   7  Placeholder hint     — shown only when no hero image has been generated
 
 async function renderBanner(
   canvas:       HTMLCanvasElement,
@@ -407,6 +468,15 @@ async function renderBanner(
   const heroScale   = params?.heroScale           ?? 1.0;
   const blend       = params?.heroBlend           ?? BANNER_HERO_BLEND_DEFAULT;
   const blendColor  = params?.blendColor          ?? undefined;
+  const t1Color     = params?.t1Color             ?? BANNER_T1_COLOR_DEFAULT;
+  const t1Opacity   = params?.t1ColorOpacity      ?? BANNER_T1_OPACITY_DEFAULT;
+  const t2Color     = params?.t2Color             ?? BANNER_T2_COLOR_DEFAULT;
+  const t2Opacity   = params?.t2ColorOpacity      ?? BANNER_T2_OPACITY_DEFAULT;
+  const zEnabled    = params?.zEnabled            ?? BANNER_Z_ENABLED_DEFAULT;
+  const zOpacity    = clamp(params?.zOpacity      ?? BANNER_Z_OPACITY_DEFAULT, BANNER_Z_OPACITY_MIN, BANNER_Z_OPACITY_MAX);
+  const zScale      = clamp(params?.zScale        ?? BANNER_Z_SCALE_DEFAULT,   BANNER_Z_SCALE_MIN,   BANNER_Z_SCALE_MAX);
+  // Auto: follow blendColor; fallback to white (works on any background tone)
+  const zColor      = params?.zColor              ?? blendColor                 ?? BANNER_Z_COLOR_DEFAULT;
   const logoPath    = resolveLogoPath(params?.logoVariant ?? LOGO_VARIANT_DEFAULT);
 
   // Emit hero drag bounds immediately — full canvas in the new pipeline.
@@ -450,7 +520,29 @@ async function renderBanner(
   // ── Layer 3 · AmbientTexture ─────────────────────────────────────────────────
   drawAmbientTexture(ctx);
 
-  // ── Layer 4 · HeroLogoLayer ──────────────────────────────────────────────────
+  // ── Layer 4 · TrademarkZ ─────────────────────────────────────────────────────
+  // Official ZaloPay Trademark Z (Z-agent.svg) rendered as a decorative watermark
+  // anchored top-right, partially cropped on the right edge.  Drawn with
+  // soft-light blend — always above the hero/gradient, below logo and taglines.
+  if (zEnabled && zOpacity > 0 && !stale()) {
+    const zH     = Math.round(H * Z_HEIGHT_RATIO * (zScale / 100));
+    const zW     = Math.round(zH * (Z_SVG_VW / Z_SVG_VH));
+    const zX     = Math.round(W + W * Z_RIGHT_OVERHANG - zW - 70);
+    const zY     = Math.round(H * Z_TOP_PADDING + 60);
+    const scaleX = zW / Z_SVG_VW;
+    const scaleY = zH / Z_SVG_VH;
+
+    ctx.save();
+    ctx.translate(zX, zY);
+    ctx.scale(scaleX, scaleY);
+    ctx.globalAlpha              = zOpacity / 100;
+    ctx.globalCompositeOperation = "soft-light";
+    ctx.fillStyle                = zColor;
+    ctx.fill(getZPath2D());
+    ctx.restore();
+  }
+
+  // ── Layer 5 · HeroLogoLayer ──────────────────────────────────────────────────
   // Logo is loaded from the asset registry path for the selected variant.
   // If the variant file is missing (e.g. primary PNG not yet added), we fall
   // back to the white logo — never a broken image, never an AI-generated substitute.
@@ -517,7 +609,7 @@ async function renderBanner(
   roundedRectPath(ctx, t1BoxX, cursorY, t1BoxW, t1H, 10, 10, 10, 10);
   ctx.fill();
 
-  ctx.fillStyle = WHITE;
+  ctx.fillStyle = hexToRgbaStyle(t1Color, t1Opacity);
   ctx.fillText(t1Text, t1BoxX + t1BoxW / 2, cursorY + t1H / 2);
   ctx.letterSpacing = "0px";
   cursorY += t1H + LAYOUT_SP.labelToHeadline;
@@ -534,7 +626,7 @@ async function renderBanner(
     default:      t2X = W / 2;    t2CanvasAlign = "center";
   }
 
-  ctx.fillStyle    = WHITE;
+  ctx.fillStyle    = hexToRgbaStyle(t2Color, t2Opacity);
   ctx.textAlign    = t2CanvasAlign;
   ctx.textBaseline = "alphabetic";
 
@@ -554,7 +646,7 @@ async function renderBanner(
     cursorY += Math.round(fs * LAYOUT_SP.t2LineHeight);
   }
 
-  // ── Layer 6 · Placeholder hint ───────────────────────────────────────────────
+  // ── Layer 7 · Placeholder hint ───────────────────────────────────────────────
   if (!heroLoaded) {
     drawHeroPlaceholder(ctx);
   }
@@ -587,6 +679,14 @@ interface BannerCanvasProps {
   heroScale?:         number;
   heroBlend?:         number;
   blendColor?:        string;
+  t1Color?:           string;
+  t1ColorOpacity?:    number;
+  t2Color?:           string;
+  t2ColorOpacity?:    number;
+  zEnabled?:          boolean;
+  zOpacity?:          number;
+  zScale?:            number;
+  zColor?:            string;
   onHeroBoundsReady?: (bounds: { x: number; y: number; w: number; h: number }) => void;
   /** CSS display size in px — canvas internal resolution is always 1200 × 1200 */
   displaySize?:       number;
@@ -601,6 +701,8 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
       t1FontSize, t2FontSize, logoScale, logoVariant,
       t1TextTransform, t1Align, t2Align, heroMaskStyle,
       heroOffsetX, heroOffsetY, heroScale, heroBlend, blendColor,
+      t1Color, t1ColorOpacity, t2Color, t2ColorOpacity,
+      zEnabled, zOpacity, zScale, zColor,
       onHeroBoundsReady,
       displaySize, onRenderComplete, className,
     },
@@ -624,6 +726,8 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
           t1FontSize, t2FontSize, logoScale, logoVariant,
           t1TextTransform, t1Align, t2Align, heroMaskStyle,
           heroOffsetX, heroOffsetY, heroScale, heroBlend, blendColor,
+          t1Color, t1ColorOpacity, t2Color, t2ColorOpacity,
+          zEnabled, zOpacity, zScale, zColor,
           onHeroBoundsReady,
         },
       );
@@ -632,6 +736,8 @@ export const BannerCanvas = forwardRef<BannerCanvasHandle, BannerCanvasProps>(
       t1FontSize, t2FontSize, logoScale, logoVariant,
       t1TextTransform, t1Align, t2Align, heroMaskStyle,
       heroOffsetX, heroOffsetY, heroScale, heroBlend, blendColor,
+      t1Color, t1ColorOpacity, t2Color, t2ColorOpacity,
+      zEnabled, zOpacity, zScale, zColor,
       onHeroBoundsReady,
       onRenderComplete,
     ]);

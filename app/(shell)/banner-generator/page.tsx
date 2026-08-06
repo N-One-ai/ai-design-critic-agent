@@ -20,6 +20,9 @@ import {
   BANNER_HERO_MASK_DEFAULT,
   BANNER_HERO_BLEND_DEFAULT,
   BANNER_CANVAS_DISPLAY_SIZE,
+  BANNER_Z_ENABLED_DEFAULT,
+  BANNER_Z_OPACITY_DEFAULT,
+  BANNER_Z_SCALE_DEFAULT,
 } from "@/components/modules/banner-generator/banner-canvas";
 import { LOGO_VARIANT_DEFAULT } from "@/lib/assets/logo-assets";
 import { HeroDragLayer } from "@/components/modules/banner-generator/hero-drag-layer";
@@ -40,6 +43,7 @@ import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import type { BannerHeroStyle, BannerResult, BannerStatus, BannerTemplateValues, LogoVariant } from "@/lib/types";
 import { BLEND_COLOR_DEFAULT } from "@/lib/brand/blend-presets";
+import { T_COLOR_DEFAULT, T_OPACITY_DEFAULT } from "@/lib/brand/typography-presets";
 
 // ── Default form values ───────────────────────────────────────────────────────
 
@@ -60,6 +64,14 @@ const DEFAULT_FORM: BannerTemplateValues = {
   heroBlend:          BANNER_HERO_BLEND_DEFAULT,
   blendColor:         BLEND_COLOR_DEFAULT,
   logoVariant:        LOGO_VARIANT_DEFAULT, // "primary" — full-colour blue+green logo
+  t1Color:            T_COLOR_DEFAULT,
+  t1ColorOpacity:     T_OPACITY_DEFAULT,
+  t2Color:            T_COLOR_DEFAULT,
+  t2ColorOpacity:     T_OPACITY_DEFAULT,
+  zEnabled:           BANNER_Z_ENABLED_DEFAULT,
+  zOpacity:           BANNER_Z_OPACITY_DEFAULT,
+  zScale:             BANNER_Z_SCALE_DEFAULT,
+  // zColor intentionally omitted → undefined = auto (follows blendColor)
 };
 
 const HISTORY_KEY = "banner-template-history";
@@ -221,10 +233,18 @@ export default function BannerGeneratorPage() {
         heroOffsetX:  t.offsetX,
         heroOffsetY:  t.offsetY,
         heroScale:    t.scale,
-        heroBlend:    form.heroBlend    ?? BANNER_HERO_BLEND_DEFAULT,
-        blendColor:   form.blendColor   ?? BLEND_COLOR_DEFAULT,
-        logoVariant:  form.logoVariant  ?? LOGO_VARIANT_DEFAULT,
-        createdAt:    new Date().toISOString(),
+        heroBlend:       form.heroBlend       ?? BANNER_HERO_BLEND_DEFAULT,
+        blendColor:      form.blendColor      ?? BLEND_COLOR_DEFAULT,
+        logoVariant:     form.logoVariant     ?? LOGO_VARIANT_DEFAULT,
+        t1Color:         form.t1Color         ?? T_COLOR_DEFAULT,
+        t1ColorOpacity:  form.t1ColorOpacity  ?? T_OPACITY_DEFAULT,
+        t2Color:         form.t2Color         ?? T_COLOR_DEFAULT,
+        t2ColorOpacity:  form.t2ColorOpacity  ?? T_OPACITY_DEFAULT,
+        zEnabled:        form.zEnabled        ?? BANNER_Z_ENABLED_DEFAULT,
+        zOpacity:        form.zOpacity        ?? BANNER_Z_OPACITY_DEFAULT,
+        zScale:          form.zScale          ?? BANNER_Z_SCALE_DEFAULT,
+        zColor:          form.zColor,    // undefined = auto; preserved as-is
+        createdAt:       new Date().toISOString(),
       };
 
       setHistory((prev) => {
@@ -322,12 +342,26 @@ export default function BannerGeneratorPage() {
       offsetY: item.heroOffsetY ?? 0,
       scale:   item.heroScale   ?? 1.0,
     });
-    if (item.heroBlend !== undefined || item.blendColor !== undefined || item.logoVariant !== undefined) {
+    if (
+      item.heroBlend !== undefined || item.blendColor !== undefined ||
+      item.logoVariant !== undefined ||
+      item.t1Color !== undefined || item.t1ColorOpacity !== undefined ||
+      item.t2Color !== undefined || item.t2ColorOpacity !== undefined
+    ) {
       setFormValues((prev) => ({
         ...prev,
-        ...(item.heroBlend   !== undefined && { heroBlend:   item.heroBlend }),
-        ...(item.blendColor  !== undefined && { blendColor:  item.blendColor }),
-        ...(item.logoVariant !== undefined && { logoVariant: item.logoVariant }),
+        ...(item.heroBlend        !== undefined && { heroBlend:       item.heroBlend }),
+        ...(item.blendColor       !== undefined && { blendColor:      item.blendColor }),
+        ...(item.logoVariant      !== undefined && { logoVariant:     item.logoVariant }),
+        ...(item.t1Color          !== undefined && { t1Color:         item.t1Color }),
+        ...(item.t1ColorOpacity   !== undefined && { t1ColorOpacity:  item.t1ColorOpacity }),
+        ...(item.t2Color          !== undefined && { t2Color:         item.t2Color }),
+        ...(item.t2ColorOpacity   !== undefined && { t2ColorOpacity:  item.t2ColorOpacity }),
+        ...(item.zEnabled         !== undefined && { zEnabled:        item.zEnabled }),
+        ...(item.zOpacity         !== undefined && { zOpacity:        item.zOpacity }),
+        ...(item.zScale           !== undefined && { zScale:          item.zScale }),
+        // zColor may be undefined (auto) — restore as-is including undefined
+        zColor: item.zColor,
       }));
     }
     setStatus("done");
@@ -449,6 +483,14 @@ export default function BannerGeneratorPage() {
                       heroBlend={formValues.heroBlend ?? BANNER_HERO_BLEND_DEFAULT}
                       blendColor={formValues.blendColor ?? BLEND_COLOR_DEFAULT}
                       logoVariant={formValues.logoVariant ?? LOGO_VARIANT_DEFAULT}
+                      t1Color={formValues.t1Color}
+                      t1ColorOpacity={formValues.t1ColorOpacity}
+                      t2Color={formValues.t2Color}
+                      t2ColorOpacity={formValues.t2ColorOpacity}
+                      zEnabled={formValues.zEnabled}
+                      zOpacity={formValues.zOpacity}
+                      zScale={formValues.zScale}
+                      zColor={formValues.zColor}
                       onHeroBoundsReady={setHeroBounds}
                       onRenderComplete={handleRenderComplete}
                       className="rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.18)]"

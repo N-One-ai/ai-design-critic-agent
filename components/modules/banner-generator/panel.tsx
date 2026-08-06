@@ -6,6 +6,8 @@ import { PanelSection } from "@/components/ui/card";
 import { PrimaryActionButton, type CTAState } from "@/components/ui/primary-action-button";
 import { Badge } from "@/components/ui/badge";
 import { Input, Textarea } from "@/components/ui/input";
+import { cn } from "@/lib/cn";
+import { HeroPromptStudio } from "./hero-prompt-studio";
 import type { BannerHeroStyle, BannerStatus, BannerTemplateValues } from "@/lib/types";
 import { FontSizeSlider } from "./font-size-slider";
 import { TaglineAlignmentSelector } from "./tagline-alignment-selector";
@@ -13,6 +15,8 @@ import { HeroImageControls } from "./hero-image-controls";
 import { HeroBlendSlider } from "./hero-blend-slider";
 import { LogoVariantSelector } from "./logo-variant-selector";
 import { BlendColorPicker } from "./blend-color-picker";
+import { TypographyColorPicker } from "./typography-color-picker";
+import { Z_COLOR_PRESETS } from "@/lib/brand/z-trademark";
 import {
   BANNER_T1_FS_DEFAULT, BANNER_T1_FS_MIN, BANNER_T1_FS_MAX,
   BANNER_T2_FS_DEFAULT, BANNER_T2_FS_MIN, BANNER_T2_FS_MAX,
@@ -20,8 +24,16 @@ import {
   BANNER_T1_ALIGN_DEFAULT,
   BANNER_T2_ALIGN_DEFAULT,
   BANNER_HERO_BLEND_DEFAULT,
+  BANNER_Z_ENABLED_DEFAULT,
+  BANNER_Z_OPACITY_DEFAULT,
+  BANNER_Z_SCALE_DEFAULT,
+  BANNER_Z_OPACITY_MIN,
+  BANNER_Z_OPACITY_MAX,
+  BANNER_Z_SCALE_MIN,
+  BANNER_Z_SCALE_MAX,
 } from "./banner-canvas";
 import { BLEND_COLOR_DEFAULT, BLEND_OPACITY_RESET } from "@/lib/brand/blend-presets";
+import { T_COLOR_DEFAULT, T_OPACITY_DEFAULT } from "@/lib/brand/typography-presets";
 import { type HeroTransform } from "./use-hero-drag";
 
 // ── Hero style options ────────────────────────────────────────────────────────
@@ -69,7 +81,8 @@ export function BannerGeneratorPanel({
   blendColor,
   onBlendColorChange,
 }: BannerGeneratorPanelProps) {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedOpen,  setAdvancedOpen]  = useState(false);
+  const [brandLocked,   setBrandLocked]   = useState(true);
 
   const isLoading = status === "loading";
   const ctaState: CTAState =
@@ -200,7 +213,47 @@ export function BannerGeneratorPanel({
               Typography
             </div>
             <div className="flex-1 h-px bg-[var(--border-default)]" />
-            <span className="text-[10.5px] text-[var(--fg-muted)]">Cập nhật ngay lập tức</span>
+
+            {/* Brand Lock toggle */}
+            <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
+              <span className="text-[10.5px] text-[var(--fg-muted)]">
+                {brandLocked ? "Khoá màu" : "Tuỳ màu"}
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={brandLocked}
+                onClick={() => setBrandLocked((v) => !v)}
+                disabled={isLoading}
+                style={{
+                  width:          34,
+                  height:         18,
+                  borderRadius:   9,
+                  background:     brandLocked ? "var(--brand-default)" : "var(--border-strong)",
+                  position:       "relative",
+                  border:         "none",
+                  cursor:         "pointer",
+                  transition:     "background 0.15s",
+                  flexShrink:     0,
+                  padding:        0,
+                }}
+                className="disabled:opacity-40"
+              >
+                <span
+                  style={{
+                    position:     "absolute",
+                    top:          2,
+                    left:         brandLocked ? 18 : 2,
+                    width:        14,
+                    height:       14,
+                    borderRadius: "50%",
+                    background:   "#ffffff",
+                    boxShadow:    "0 1px 3px rgba(0,0,0,0.30)",
+                    transition:   "left 0.15s",
+                  }}
+                />
+              </button>
+            </label>
           </div>
 
           <div className="space-y-4">
@@ -214,6 +267,18 @@ export function BannerGeneratorPanel({
               disabled={isLoading}
               onChange={(v) => onChange({ t1FontSize: v })}
             />
+            <TypographyColorPicker
+              label="Màu chữ Tagline 1"
+              value={formValues.t1Color ?? T_COLOR_DEFAULT}
+              opacity={formValues.t1ColorOpacity ?? T_OPACITY_DEFAULT}
+              onChange={(hex, op) => onChange({ t1Color: hex, t1ColorOpacity: op })}
+              onReset={() => onChange({ t1Color: T_COLOR_DEFAULT, t1ColorOpacity: T_OPACITY_DEFAULT })}
+              disabled={isLoading}
+              brandLocked={brandLocked}
+              bgForContrast="#0033C9"
+              recentKey="banner-typo-t1-recent"
+            />
+
             <FontSizeSlider
               label="Tagline 2 (tiêu đề chính)"
               value={formValues.t2FontSize ?? BANNER_T2_FS_DEFAULT}
@@ -223,6 +288,17 @@ export function BannerGeneratorPanel({
               step={2}
               disabled={isLoading}
               onChange={(v) => onChange({ t2FontSize: v })}
+            />
+            <TypographyColorPicker
+              label="Màu chữ Tagline 2"
+              value={formValues.t2Color ?? T_COLOR_DEFAULT}
+              opacity={formValues.t2ColorOpacity ?? T_OPACITY_DEFAULT}
+              onChange={(hex, op) => onChange({ t2Color: hex, t2ColorOpacity: op })}
+              onReset={() => onChange({ t2Color: T_COLOR_DEFAULT, t2ColorOpacity: T_OPACITY_DEFAULT })}
+              disabled={isLoading}
+              brandLocked={brandLocked}
+              bgForContrast="#00934A"
+              recentKey="banner-typo-t2-recent"
             />
           </div>
         </div>
@@ -237,17 +313,13 @@ export function BannerGeneratorPanel({
           </div>
 
           <div className="space-y-3">
-            <PanelSection title="Sản phẩm / Chủ thể *">
-              <Input
-                placeholder="VD: smartphone hiện đại đang dùng ZaloPay, thanh toán thành công..."
-                value={formValues.product}
-                onChange={(e) => onChange({ product: e.target.value })}
-                disabled={isLoading}
-              />
-              <p className="text-[11px] text-[var(--fg-muted)] mt-1.5">
-                AI sẽ tạo ảnh này và đặt vào vùng hero phía dưới
-              </p>
-            </PanelSection>
+            <HeroPromptStudio
+              value={formValues.product}
+              onChange={(v) => onChange({ product: v })}
+              disabled={isLoading}
+              campaignName={formValues.campaignName}
+              onGenerate={onGenerate}
+            />
 
             <PanelSection title="Tên chiến dịch">
               <Input
@@ -346,6 +418,179 @@ export function BannerGeneratorPanel({
             )}
           </div>
         )}
+
+        {/* ── Brand Elements ──────────────────────────────────────────────── */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="text-[11px] font-semibold text-[var(--fg-subtle)] uppercase tracking-wide">
+              Brand Elements
+            </div>
+            <div className="flex-1 h-px bg-[var(--border-default)]" />
+          </div>
+
+          {/* Trademark Z */}
+          <div className="px-3 py-3 rounded-[var(--radius-lg)] border border-[var(--border-default)] space-y-3">
+            {/* Header row: label + toggle */}
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="text-[12.5px] font-semibold text-[var(--fg-default)]">Trademark Z</div>
+                <div className="text-[11px] text-[var(--fg-muted)] mt-0.5">
+                  Hình nền thương hiệu
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT}
+                onClick={() => onChange({ zEnabled: !(formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT) })}
+                disabled={isLoading}
+                style={{
+                  width:        34,
+                  height:       18,
+                  borderRadius: 9,
+                  background:   (formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT)
+                    ? "var(--brand-default)"
+                    : "var(--border-strong)",
+                  position:     "relative",
+                  border:       "none",
+                  cursor:       "pointer",
+                  transition:   "background 0.15s",
+                  flexShrink:   0,
+                  padding:      0,
+                }}
+                className="disabled:opacity-40"
+              >
+                <span
+                  style={{
+                    position:     "absolute",
+                    top:          2,
+                    left:         (formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT) ? 18 : 2,
+                    width:        14,
+                    height:       14,
+                    borderRadius: "50%",
+                    background:   "#ffffff",
+                    boxShadow:    "0 1px 3px rgba(0,0,0,0.30)",
+                    transition:   "left 0.15s",
+                  }}
+                />
+              </button>
+            </div>
+
+            {(formValues.zEnabled ?? BANNER_Z_ENABLED_DEFAULT) && (
+              <div className="space-y-3 pt-1">
+
+                {/* Opacity slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] text-[var(--fg-muted)]">Độ mờ</span>
+                    <span className="text-[11px] font-mono text-[var(--fg-subtle)]">
+                      {formValues.zOpacity ?? BANNER_Z_OPACITY_DEFAULT}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={BANNER_Z_OPACITY_MIN}
+                    max={BANNER_Z_OPACITY_MAX}
+                    step={1}
+                    value={formValues.zOpacity ?? BANNER_Z_OPACITY_DEFAULT}
+                    onChange={(e) => onChange({ zOpacity: Number(e.target.value) })}
+                    disabled={isLoading}
+                    className="w-full accent-[var(--brand-default)] disabled:opacity-40"
+                    style={{ height: 4 }}
+                  />
+                  <div className="flex justify-between mt-0.5">
+                    <span className="text-[9.5px] text-[var(--fg-muted)]">{BANNER_Z_OPACITY_MIN}%</span>
+                    <span className="text-[9.5px] text-[var(--fg-muted)]">{BANNER_Z_OPACITY_MAX}%</span>
+                  </div>
+                </div>
+
+                {/* Scale slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] text-[var(--fg-muted)]">Kích cỡ</span>
+                    <span className="text-[11px] font-mono text-[var(--fg-subtle)]">
+                      {formValues.zScale ?? BANNER_Z_SCALE_DEFAULT}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={BANNER_Z_SCALE_MIN}
+                    max={BANNER_Z_SCALE_MAX}
+                    step={5}
+                    value={formValues.zScale ?? BANNER_Z_SCALE_DEFAULT}
+                    onChange={(e) => onChange({ zScale: Number(e.target.value) })}
+                    disabled={isLoading}
+                    className="w-full accent-[var(--brand-default)] disabled:opacity-40"
+                    style={{ height: 4 }}
+                  />
+                  <div className="flex justify-between mt-0.5">
+                    <span className="text-[9.5px] text-[var(--fg-muted)]">{BANNER_Z_SCALE_MIN}%</span>
+                    <span className="text-[9.5px] text-[var(--fg-muted)]">{BANNER_Z_SCALE_MAX}%</span>
+                  </div>
+                </div>
+
+                {/* Color swatches */}
+                <div>
+                  <span className="text-[11px] text-[var(--fg-muted)] block mb-1.5">Màu sắc</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Auto swatch (follows blend/accent) */}
+                    <button
+                      type="button"
+                      title="Tự động (theo màu nền)"
+                      disabled={isLoading}
+                      onClick={() => onChange({ zColor: undefined })}
+                      style={{
+                        width:        26,
+                        height:       26,
+                        borderRadius: "50%",
+                        background:   "conic-gradient(#00CF6A 0deg 120deg, #0033C9 120deg 240deg, #FFFFFF 240deg 360deg)",
+                        border:       !formValues.zColor
+                          ? "2.5px solid var(--fg-default)"
+                          : "1.5px solid rgba(255,255,255,0.15)",
+                        outline:      !formValues.zColor ? "2px solid rgba(255,255,255,0.20)" : "none",
+                        outlineOffset: 2,
+                        cursor:       "pointer",
+                        flexShrink:   0,
+                        transition:   "transform 0.1s",
+                      }}
+                      className="hover:scale-110 disabled:opacity-40"
+                    />
+                    {Z_COLOR_PRESETS.map((p) => {
+                      const isSel = formValues.zColor?.toUpperCase() === p.hex.toUpperCase();
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          title={p.labelVi}
+                          disabled={isLoading}
+                          onClick={() => onChange({ zColor: p.hex })}
+                          style={{
+                            width:        26,
+                            height:       26,
+                            borderRadius: "50%",
+                            background:   p.hex,
+                            border:       isSel
+                              ? "2.5px solid var(--fg-default)"
+                              : "1.5px solid rgba(255,255,255,0.15)",
+                            outline:      isSel ? "2px solid rgba(255,255,255,0.20)" : "none",
+                            outlineOffset: 2,
+                            cursor:       "pointer",
+                            flexShrink:   0,
+                            transition:   "transform 0.1s",
+                          }}
+                          className="hover:scale-110 disabled:opacity-40"
+                        />
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-[var(--fg-muted)] mt-1">
+                    Tự động = theo màu nền đang chọn
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* ── Advanced (collapsible) ──────────────────────────────────────── */}
         <div>
