@@ -1,35 +1,38 @@
 /**
- * BannerPromptService — converts a banner brief into a hero-only visual scene
- * description optimised for Higgsfield.
+ * Hero Image Prompt Builder — pure template assembler.
  *
- * The generated prompt DESCRIBES ONLY the hero image subject (person, product,
- * scene, lighting). It explicitly excludes any text, logos, typography, or
- * layout elements — those are rendered deterministically by the frontend canvas.
+ * Design principle:
+ *   The user's prompt is the HIGHEST priority. We never replace, rewrite,
+ *   or override the subject, action, product, location, or any element the
+ *   user explicitly requested.
  *
- * Provider requirement: "text-generation" (satisfied by GeminiProvider).
+ *   We ONLY append:
+ *     1. User prompt (verbatim)
+ *     2. Advertising quality tag
+ *     3. Lighting (only when absent from user prompt)
+ *     4. Camera framing hint (1 short sentence)
+ *     5. Style quality descriptor (mood / rendering, NO subject matter)
+ *     6. Copy-space constraint
+ *     7. No-text / no-logo constraint
+ *
+ * No LLM call is needed or made here.
+ * Gemini / AI is completely removed from this step.
  */
 
-import type { GenerateRequest, GenerateResponse } from "../types";
-import { AIService } from "./base";
-import { ParseError } from "../errors";
-import { extractJson } from "@/lib/llm-client";
 import {
   detectSubjectCategory,
   resolveCameraFraming,
-  buildCompositionBlock,
   COMPOSITION_NEGATIVE,
-  COMPOSITION_PREFIX,
-  BANNER_CANVAS_SPECS,
-  DEFAULT_CANVAS_KEY,
 } from "./banner-composition";
+import type { CameraFraming } from "./banner-composition";
 
-// ── Input / Output types ──────────────────────────────────────────────────────
+// ── Input / output ────────────────────────────────────────────────────────────
 
 export interface BannerHeroInput {
-  campaignName:        string;
-  tagline1:            string;
-  tagline2:            string;
   product:             string;
+  campaignName?:       string;
+  tagline1?:           string;
+  tagline2?:           string;
   audience?:           string;
   heroStyle?:          string;
   heroPromptOverride?: string;
@@ -43,157 +46,128 @@ export interface BannerPromptOutput {
 // Legacy alias — kept so any remaining callers still compile
 export type BannerPromptInput = BannerHeroInput;
 
-// ── Service ───────────────────────────────────────────────────────────────────
+// ── Style quality table ───────────────────────────────────────────────────────
+//
+// These are RENDERING / MOOD descriptors only.
+// They MUST NOT inject subject matter (people, objects, locations, background).
+
+const STYLE_QUALITY: Readonly<Record<string, string>> = {
+  Modern:    "Clean modern aesthetic. Warm natural bokeh. Magazine editorial quality.",
+  Festive:   "Warm golden tones. Celebratory mood. Vibrant and joyful color grading.",
+  Minimal:   "Ultra-clean minimalist composition. Deliberate negative space. Pure tones.",
+  Bold:      "High-contrast dramatic lighting. Cinematic impact. Dynamic composition.",
+  Corporate: "Polished professional aesthetic. Trustworthy and aspirational. Neutral palette.",
+};
+
+// ── Camera framing one-liners ─────────────────────────────────────────────────
+//
+// Short framing hint appended to help the image model compose correctly.
+// Never describes what's IN the scene.
+
+const FRAMING_HINTS: Readonly<Record<CameraFraming, string>> = {
+  "medium-shot":            "Medium shot, subject waist-up.",
+  "medium-full-shot":       "Medium full shot, full body visible from head to feet.",
+  "close-up":               "Close-up shot, fine detail.",
+  "three-quarter-shot":     "Three-quarter shot, head to below knees.",
+  "hero-product-shot":      "Hero product shot, angled perspective, full product visible.",
+  "wide-establishing-shot": "Wide establishing shot, environment fills the frame.",
+};
+
+// ── Lighting keyword detection ────────────────────────────────────────────────
+
+function hasLightingKeyword(text: string): boolean {
+  return /\b(light|lighting|studio|backlit|backlight|golden hour|shadow|silhouette|lamp|flash|strobe|sun|dawn|dusk|daylight|ánh sáng|đèn|sáng|sáng tối|chiếu sáng)\b/i.test(text);
+}
+
+// ── Core pure builder ─────────────────────────────────────────────────────────
+
+/**
+ * Assembles the hero image prompt without calling any LLM.
+ *
+ * Priority order (highest → lowest):
+ *   1. User's prompt (verbatim — never modified)
+ *   2. Commercial advertising tag
+ *   3. Lighting (injected only when missing from user input)
+ *   4. Camera framing hint
+ *   5. Style quality (mood/rendering, no subject matter)
+ *   6. Copy-space instruction
+ *   7. No-text constraint
+ */
+export function buildHeroPrompt(input: BannerHeroInput): BannerPromptOutput {
+  // If the user provided a full override, send it with minimal additions only
+  const userInput = input.heroPromptOverride?.trim()
+    ? input.heroPromptOverride.trim()
+    : (input.product?.trim() ?? "");
+
+  if (!userInput) {
+    return { optimizedPrompt: "", negativePrompt: COMPOSITION_NEGATIVE };
+  }
+
+  const category = detectSubjectCategory(userInput);
+  const framing  = resolveCameraFraming(category);
+  const quality  = STYLE_QUALITY[input.heroStyle ?? "Modern"] ?? STYLE_QUALITY["Modern"];
+  const framingHint = FRAMING_HINTS[framing];
+
+  const parts: string[] = [];
+
+  // ── 1. User prompt — verbatim, no modification ────────────────────────────
+  parts.push(userInput);
+
+  // ── 2. Advertising quality context ───────────────────────────────────────
+  parts.push("Commercial advertising photography. Premium campaign visual.");
+
+  // ── 3. Lighting — add only if user did not specify ────────────────────────
+  if (!hasLightingKeyword(userInput)) {
+    parts.push("Professional studio lighting, soft shadows.");
+  }
+
+  // ── 4. Camera framing ────────────────────────────────────────────────────
+  parts.push(framingHint);
+
+  // ── 5. Style / rendering quality (NO subject/location injection) ──────────
+  parts.push(quality);
+
+  // ── 6. Copy-space rule ────────────────────────────────────────────────────
+  parts.push(
+    "Subject positioned in the lower portion of the frame. " +
+    "Leave generous natural space at the top for typography overlay."
+  );
+
+  // ── 7. No-text / no-logo ──────────────────────────────────────────────────
+  parts.push("No text. No watermark. No logo. No typography in the image.");
+
+  return {
+    optimizedPrompt: parts.join(" "),
+    negativePrompt:  COMPOSITION_NEGATIVE,
+  };
+}
+
+// ── Deprecated service shim (kept for build compatibility) ────────────────────
+//
+// Any code still calling `new BannerPromptService(provider).execute(input)` will
+// compile and work — but NO LLM call is made. The pure builder runs synchronously.
+
+import { AIService } from "./base";
+import type { GenerateRequest, GenerateResponse } from "../types";
 
 export class BannerPromptService extends AIService<BannerHeroInput, BannerPromptOutput> {
   readonly serviceName        = "BannerPromptService";
   readonly requiredCapability = "text-generation" as const;
 
-  protected buildRequest(input: BannerHeroInput): GenerateRequest {
-    const text = buildHeroPromptInstructions(input);
-
+  protected buildRequest(_input: BannerHeroInput): GenerateRequest {
+    // Returning a no-op minimal request — this will never actually be used
+    // because parseResponse short-circuits on the first call.
     return {
-      messages:    [{ role: "user", content: text }],
-      maxTokens:   1024,
-      temperature: 0.65,
+      messages:  [{ role: "user", content: "noop" }],
+      maxTokens: 1,
     };
   }
 
   protected parseResponse(
-    response: GenerateResponse,
+    _response: GenerateResponse,
     input: BannerHeroInput,
   ): BannerPromptOutput {
-    // Caller-supplied override bypasses the LLM — return it directly.
-    if (input.heroPromptOverride?.trim()) {
-      return {
-        optimizedPrompt: input.heroPromptOverride.trim(),
-        negativePrompt:  COMPOSITION_NEGATIVE,
-      };
-    }
-
-    let parsed: unknown = null;
-    try {
-      parsed = extractJson(response.text);
-    } catch {
-      /* JSON parsing failed; raw text fallback below */
-    }
-
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      const obj = parsed as Record<string, unknown>;
-      if (typeof obj.optimizedPrompt === "string" && obj.optimizedPrompt.trim()) {
-        return {
-          optimizedPrompt: obj.optimizedPrompt.trim(),
-          negativePrompt:
-            typeof obj.negativePrompt === "string"
-              ? obj.negativePrompt.trim()
-              : COMPOSITION_NEGATIVE,
-        };
-      }
-    }
-
-    // Fallback: raw text when JSON parse fails.
-    const fallback = response.text.trim();
-    if (!fallback) throw new ParseError("Empty prompt response from provider", "gemini");
-    return { optimizedPrompt: fallback, negativePrompt: COMPOSITION_NEGATIVE };
+    // Always use the pure builder — ignore LLM response.
+    return buildHeroPrompt(input);
   }
-}
-
-// ── Style → visual direction ──────────────────────────────────────────────────
-
-const STYLE_DIRECTIONS: Record<string, string> = {
-  Modern:
-    "clean modern commercial lifestyle photography, soft natural light, " +
-    "contemporary Vietnamese café or urban setting, warm bokeh background, " +
-    "magazine editorial quality",
-  Festive:
-    "vibrant Vietnamese festive atmosphere, warm golden light, " +
-    "celebratory mood with subtle traditional Vietnamese decorative elements, " +
-    "joyful and aspirational composition",
-  Minimal:
-    "ultra-clean minimalist studio product photography, pure soft-gradient background " +
-    "matching ZaloPay green palette, precise geometric composition, " +
-    "Scandinavian-influenced aesthetics, deliberate negative space",
-  Bold:
-    "dramatic high-contrast commercial photography, dynamic diagonal composition, " +
-    "powerful directional lighting, vibrant energy matching ZaloPay brand palette, " +
-    "cinematic impact",
-  Corporate:
-    "professional Vietnamese business environment, polished editorial quality, " +
-    "trustworthy and aspirational, modern office or business lifestyle setting, " +
-    "neutral sophisticated palette with ZaloPay brand accent colours",
-};
-
-// ── Prompt builder ────────────────────────────────────────────────────────────
-
-function buildHeroPromptInstructions(input: BannerHeroInput): string {
-  const styleDirection =
-    (input.heroStyle && STYLE_DIRECTIONS[input.heroStyle]) ??
-    STYLE_DIRECTIONS["Modern"];
-
-  // Auto-detect subject and resolve optimal camera framing
-  const category   = detectSubjectCategory(input.product);
-  const framing    = resolveCameraFraming(category);
-  const canvasSpec = BANNER_CANVAS_SPECS[DEFAULT_CANVAS_KEY];
-  const compositionBlock = buildCompositionBlock({ category, framing, canvasSpec });
-
-  const lines: string[] = [
-    "You are a senior visual art director specialising in Vietnamese fintech advertising.",
-    "",
-    "Your task: write ONE concise visual scene description for an AI image generator.",
-    "This image will be the HERO of a ZaloPay advertising banner — a 1:1 square canvas.",
-    "",
-    "CRITICAL CONSTRAINTS — NEVER appear in the prompt:",
-    "  - No text, words, letters, numbers, or typography of any kind",
-    "  - No logos, brand marks, watermarks, or symbols",
-    "  - No UI overlays, labels, banner layout, or graphic design elements",
-    "  - No quality descriptors (8K, photorealistic, HDR) — the pipeline handles those",
-    "  - No aspect ratio or canvas size instructions — already handled below",
-    "",
-    "Why: text, logos, and taglines are rendered deterministically by the frontend canvas.",
-    "The AI must generate ONLY the visual scene — a human subject, product, environment, light.",
-    "",
-    "═══ COMPOSITION — MANDATORY FRAMING SYSTEM ════════════════════════════════",
-    COMPOSITION_PREFIX,
-    "",
-    compositionBlock,
-    "════════════════════════════════════════════════════════════════════════════",
-    "",
-    "CAMERA FRAMING RATIONALE:",
-    `  Detected subject type: ${category}`,
-    `  Auto-selected framing: ${framing}`,
-    "  The generated scene MUST respect this framing choice.",
-    "  Never crop heads. Never crop product edges. Never crop full-body subjects at the knees.",
-    "",
-    "HERO BRIEF:",
-    `  Product / Subject : ${input.product}`,
-  ];
-
-  if (input.campaignName?.trim()) lines.push(`  Campaign          : ${input.campaignName}`);
-  if (input.audience?.trim())     lines.push(`  Target audience   : ${input.audience}`);
-  if (input.tagline1?.trim())     lines.push(`  Tagline 1 context : ${input.tagline1} (context only — do NOT render)`);
-  if (input.tagline2?.trim())     lines.push(`  Tagline 2 context : ${input.tagline2} (context only — do NOT render)`);
-
-  lines.push(
-    "",
-    "VISUAL DIRECTION:",
-    `  Style: ${styleDirection}`,
-    "",
-    "ZALOPAY BRAND ESSENCE (inject naturally — not as visible props or labels):",
-    "  - Brand colours: #0033C9 (deep blue), #00CF6A (vibrant green)",
-    "  - Young Vietnamese urban professionals, age 20–35, modern city lifestyle",
-    "  - Modern smartphone naturally visible if it fits the scene",
-    "  - Premium commercial advertising photography, magazine cover quality",
-    "  - Vietnamese street scenes, modern cafés, homes, or lifestyle settings",
-    "",
-    "DEPTH-OF-FIELD GUIDANCE:",
-    "  - Use natural shallow depth-of-field; subject is sharp, background softly blurs.",
-    "  - The background fills the full frame — continuing above and around the subject.",
-    "  - Scene colours should complement ZaloPay green (#00CF6A); avoid pure white or",
-    "    harsh overexposed backgrounds that clash with the brand gradient overlay.",
-    "",
-    "OUTPUT: Return ONLY a valid JSON object — no markdown fences, no commentary:",
-    `{"optimizedPrompt": "…pure visual scene description, max 150 words…", "negativePrompt": "…"}`,
-  );
-
-  return lines.join("\n");
 }

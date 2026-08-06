@@ -31,8 +31,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { GeminiProvider } from "@/lib/ai/provider/gemini";
-import { BannerPromptService } from "@/lib/ai/services/banner-prompt";
+import { buildHeroPrompt } from "@/lib/ai/services/banner-prompt";
 import { generateImageCore } from "@/lib/ai/services/image-generation-core";
 import {
   AIError,
@@ -41,7 +40,6 @@ import {
   InvalidRequestError,
   ProviderUnavailableError,
 } from "@/lib/ai/errors";
-import { aiProviderConfig } from "@/lib/config";
 import type { ImageStyle } from "@/lib/ai/types/image";
 import {
   detectSubjectCategory,
@@ -68,14 +66,6 @@ const STYLE_MAP: Record<string, ImageStyle> = {
 
 function heroStyleToImageStyle(heroStyle: string | undefined): ImageStyle {
   return (heroStyle ? STYLE_MAP[heroStyle] : undefined) ?? "realistic";
-}
-
-// ── Gemini provider singleton ─────────────────────────────────────────────────
-
-let _gemini: GeminiProvider | null = null;
-function getGemini(): GeminiProvider {
-  if (!_gemini) _gemini = new GeminiProvider(aiProviderConfig.gemini);
-  return _gemini;
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -116,60 +106,31 @@ export async function POST(req: NextRequest) {
 
   const imageStyle = heroStyleToImageStyle(heroStyle);
 
-  // ── Step 1: Build hero-only visual prompt ─────────────────────────────────
-  let heroPrompt: string;
-
-  if (heroPromptOverride?.trim()) {
-    heroPrompt = heroPromptOverride.trim();
-  } else {
-    try {
-      const promptService = new BannerPromptService(getGemini());
-      const result = await promptService.execute(
-        {
-          campaignName:       campaignName ?? "",
-          tagline1:           tagline1     ?? "",
-          tagline2:           tagline2     ?? "",
-          product:            product!,
-          audience,
-          heroStyle,
-        },
-        { timeoutMs: 30_000 },
-      );
-      heroPrompt = result.optimizedPrompt;
-    } catch (e) {
-      const msg = (e as Error).message ?? "Unknown error";
-      console.error("[POST /api/generate-banner] Step 1 — Prompt build failed:", msg);
-
-      if (e instanceof InvalidRequestError) {
-        return NextResponse.json(
-          { error: `Cấu hình Gemini không hợp lệ: ${msg}` },
-          { status: 400 },
-        );
-      }
-      if (e instanceof QuotaExceededError) {
-        return NextResponse.json(
-          { error: `Gemini quota exceeded. Check GEMINI_API_KEY and billing. Detail: ${msg}` },
-          { status: 429 },
-        );
-      }
-      return NextResponse.json(
-        { error: `Xây dựng prompt thất bại: ${msg}` },
-        { status: 500 },
-      );
-    }
-  }
-
-  // ── Step 2: Build final composition-enforced prompt ──────────────────────
+  // ── Step 1: Build hero prompt — pure template, no LLM ────────────────────
   //
-  // Composition rules are injected at TWO layers:
-  //   Layer 1 (already done): BannerPromptService (Gemini) wrote a composition-
-  //           aware scene description using buildCompositionBlock() in its prompt.
-  //   Layer 2 (here): COMPOSITION_PREFIX + composition block are prepended to
-  //           the final prompt sent to Higgsfield so the image model receives
-  //           hard full-bleed / lower-third constraints regardless of LLM phrasing.
+  // The user's subject is always preserved verbatim. We only append quality,
+  // lighting (when absent), framing, and composition constraints.
+  // No AI rewrite occurs here — subject injection risk is eliminated.
+  const { optimizedPrompt, negativePrompt: builtNegative } = buildHeroPrompt({
+    product:            product            ?? "",
+    campaignName:       campaignName       ?? "",
+    tagline1:           tagline1           ?? "",
+    tagline2:           tagline2           ?? "",
+    audience,
+    heroStyle,
+    heroPromptOverride,
+  });
+  const heroPrompt = optimizedPrompt;
+
+  // ── Step 2: Assemble final composition-enforced prompt ───────────────────
   //
-  // aspectRatio "1:1" — hero is generated at square (matching the 1200×1200 canvas)
-  // so the AI's composition maps 1:1 onto the canvas with no surprise cropping.
+  // Structure (highest → lowest image model weight):
+  //   [1] heroPrompt     — user's subject verbatim + quality enhancers (from Step 1)
+  //   [2] compositionBlock — framing / position rules (no subject injection)
+  //   [3] AVOID clause   — negative constraints inline
+  //
+  // User subject leads the prompt so the image model treats it as highest priority.
+  // aspectRatio "1:1" — hero is generated at square (matching the 1200×1200 canvas).
   const subject    = product ?? heroPromptOverride ?? "";
   const category   = detectSubjectCategory(subject);
   const framing    = resolveCameraFraming(category);
@@ -178,12 +139,9 @@ export async function POST(req: NextRequest) {
   const compositionBlock = buildCompositionBlock({ category, framing, canvasSpec });
 
   const finalHeroPrompt = [
-    COMPOSITION_PREFIX,
+    heroPrompt,
     "",
     compositionBlock,
-    "",
-    "SCENE:",
-    heroPrompt,
     "",
     `AVOID: ${COMPOSITION_AVOID_INLINE}`,
   ].join("\n");

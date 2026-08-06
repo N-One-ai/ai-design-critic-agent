@@ -166,16 +166,13 @@ export function resolveCameraFraming(category: SubjectCategory): CameraFraming {
 
 /**
  * Prepended verbatim before every prompt sent to the image model.
- * Sets the global composition intent before any scene-specific instructions.
+ * Sets global composition quality and constraints — no subject injection.
  */
 export const COMPOSITION_PREFIX =
-  "Create a premium commercial advertising hero image. " +
-  "Use a full-bleed composition — the background must naturally fill the entire canvas. " +
-  "Position the main subject in the lower third of the frame. " +
-  "Maintain generous natural negative space above the subject using depth, " +
-  "architecture, bokeh, or environment — not blank space. " +
-  "Do not intentionally leave an empty top area. " +
-  "The scene should feel professionally photographed. " +
+  "Full-bleed commercial advertising photography. " +
+  "The background fills the entire canvas naturally from the scene. " +
+  "Do not leave artificial empty areas or blank patches anywhere. " +
+  "Professionally composed. Cinematic depth of field. " +
   "No text. No logos. No typography.";
 
 // ── Composition block builder ─────────────────────────────────────────────────
@@ -201,22 +198,16 @@ export function buildCompositionBlock({
   canvasSpec = BANNER_CANVAS_SPECS[DEFAULT_CANVAS_KEY],
 }: CompositionBlockOptions): string {
   return [
-    `BANNER COMPOSITION [${canvasSpec.label}]:`,
-    `  CANVAS:     Full-bleed ${canvasSpec.aspectRatio}. Background fills the entire frame.`,
-    "              No artificial empty zones. No reserved rectangles at top.",
-    "  SUBJECT:    Position the primary subject in the lower 55–65% of the canvas.",
-    "              Head should appear around 40–50% from the top of the image.",
-    "              Body occupies the lower portion. Never crop heads or product edges.",
-    `              ${FRAMING_DESCRIPTIONS[framing]}`,
-    "              Subject lower-center (or slightly left/right if natural to scene).",
-    "  BACKGROUND: The upper portion must contain natural background continuation.",
-    "              Examples: café interior, stadium, office, city skyline, park,",
-    "              restaurant, gradient wall, soft bokeh, trees, architecture.",
-    "              The background is part of the same scene — never a blank patch.",
-    "  DEPTH:      Natural depth separates subject from background.",
-    "              Shallow depth-of-field on subject; background continues naturally above.",
-    "  INTENT:     Premium commercial photography. Cinematic. Full-bleed. Deliberately composed.",
-    `  SUBJECT CATEGORY: ${category} — ${FRAMING_DESCRIPTIONS[framing]}`,
+    `COMPOSITION [${canvasSpec.label} ${canvasSpec.aspectRatio}]:`,
+    `  FRAMING:    ${FRAMING_DESCRIPTIONS[framing]}`,
+    "  POSITION:   Primary subject occupies the lower 55–65% of the canvas.",
+    "              Head near 40–50% from the top. Never crop the subject's head or edges.",
+    "              Subject lower-center (slight off-center is natural).",
+    "  CANVAS:     Background continues naturally from the scene into the upper portion.",
+    "              The upper area is NOT blank — it is filled by the scene's natural depth,",
+    "              bokeh, or environment that the user's prompt establishes.",
+    "  DEPTH:      Shallow depth-of-field on subject; natural background recession above.",
+    `  CATEGORY:   ${category}`,
   ].join("\n");
 }
 
@@ -229,15 +220,13 @@ export function buildCompositionBlock({
  * recreate the artificial clean-zone behavior.
  */
 export const COMPOSITION_NEGATIVE =
-  "empty sky, blank gradients at top, reserved clean rectangle, artificial empty zone, " +
-  "blank upper half, plain white top area, grey empty background, " +
-  "centered subject, subject in exact center of frame, " +
-  "face cropped, head cut off, product cropped at edges, feet cropped, " +
-  "important objects near top edge, " +
-  "text in image, logo in image, watermark, typography, words, letters, numbers, " +
-  "UI overlay, HUD, banner layout, brand guidelines overlay, " +
-  "distorted, deformed hands, duplicate subjects, " +
-  "oversaturated, grainy, amateurish, stock photo look, low quality";
+  "text in image, watermark, logo, typography, words, letters, numbers, " +
+  "UI overlay, HUD, banner layout, " +
+  "extra fingers, deformed hands, duplicate limbs, blurry face, cropped head, " +
+  "cropped body at knees, product cropped at edges, deformed anatomy, " +
+  "centered subject, subject in exact vertical center, " +
+  "artificial empty top area, blank white rectangle at top, " +
+  "oversaturated, grainy, low quality, amateurish, stock photo look";
 
 /**
  * Compact avoid clause for inline injection when a separate negative param is
